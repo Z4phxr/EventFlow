@@ -111,83 +111,56 @@ npm install
 npm run dev
 ```
 
-**Access:**
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:8080
-- Swagger UI: http://localhost:8080/swagger-ui.html
-- H2 Console: http://localhost:8080/h2-console
-  - JDBC URL: `jdbc:h2:mem:eventflow`
-  - Username: `sa`
-  - Password: (leave empty)
+### Running the Application (recommended: Docker Compose)
 
----
+Najprostszy i spójny sposób uruchomienia całego stosu to użycie Docker Compose.
 
-#### Option B: Production Setup (PostgreSQL)
+1) Przygotuj backend JAR (jeśli nie chcesz budować JAR lokalnie z zainstalowanym Mavenem):
 
-**Step 1: Start PostgreSQL**
-
-Using Docker:
+- Windows (PowerShell):
 ```powershell
+docker run --rm -v "${PWD/\//\\}/backend":/workspace -w /workspace maven:3.8.8-eclipse-temurin-17 mvn -B -DskipTests clean package
+```
+- macOS / Linux:
+```bash
+docker run --rm -v $(pwd)/backend:/workspace -w /workspace maven:3.8.8-eclipse-temurin-17 mvn -B -DskipTests clean package
+```
+
+2) Uruchom docker compose (z katalogu `docker`):
+
+```bash
 cd docker
-docker-compose up -d
+docker compose up -d --build
 ```
 
-Or install PostgreSQL locally and create database:
-```sql
-CREATE DATABASE eventflow;
-CREATE USER eventflow WITH PASSWORD 'eventflow123';
-GRANT ALL PRIVILEGES ON DATABASE eventflow TO eventflow;
+- To zbuduje obrazy i uruchomi: PostgreSQL, backend oraz frontend.
+- Jeżeli chcesz wymusić przebudowę backendu:
+```bash
+docker compose build --no-cache backend
+docker compose up -d --force-recreate backend
 ```
 
-**Step 2: Configure Backend**
+3) Sprawdź logi i statusy:
 
-Copy and edit `.env` file:
-```powershell
-cd backend
-copy .env.example .env
-# Edit .env if using custom database credentials
+```bash
+docker compose ps
+docker compose logs --follow backend
 ```
 
-**Step 3: Run Backend**
-```powershell
-cd backend
-mvn clean install
-mvn spring-boot:run
-```
+4) Dostęp:
 
-**Step 4: Run Frontend**
-```powershell
-cd frontend
-npm install
-npm run dev
-```
-
-**Access:**
 - Frontend: http://localhost:5173
 - Backend API: http://localhost:8080
-- Swagger UI: http://localhost:8080/swagger-ui.html
+
+5) Zatrzymanie i usunięcie kontenerów:
+
+```bash
+docker compose down
+```
+
+Jeżeli wolisz uruchamiać usługi lokalnie bez Dockera, instrukcje dla backendu i frontendu (Maven / Node) znajdują się poniżej w sekcji "Option A / H2".
 
 ---
-
-### First Time Setup
-
-1. **Register an Organizer Account:**
-   - Go to http://localhost:5173
-   - Click "Register"
-   - Fill in details and select role "Organizer"
-   - Login with your credentials
-
-2. **Create Your First Event:**
-   - Click "My Events" in the navigation
-   - Click "Create New Event"
-   - Fill in event details
-   - Submit
-
-3. **Register as User:**
-   - Logout and register a new account with role "User"
-   - Browse events and register for them
-
-## 📚 API Documentation
 
 ### Authentication Endpoints
 
