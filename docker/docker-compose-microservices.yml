@@ -1,0 +1,208 @@
+services:
+  # PostgreSQL Databases
+  postgres-user:
+    image: postgres:15-alpine
+    container_name: eventflow-postgres-user
+    environment:
+      POSTGRES_DB: eventflow_users
+      POSTGRES_USER: eventflow
+      POSTGRES_PASSWORD: eventflow123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_user_data:/var/lib/postgresql/data
+    networks:
+      - eventflow-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eventflow -d eventflow_users"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-event:
+    image: postgres:15-alpine
+    container_name: eventflow-postgres-event
+    environment:
+      POSTGRES_DB: eventflow_events
+      POSTGRES_USER: eventflow
+      POSTGRES_PASSWORD: eventflow123
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_event_data:/var/lib/postgresql/data
+    networks:
+      - eventflow-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eventflow -d eventflow_events"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-notification:
+    image: postgres:15-alpine
+    container_name: eventflow-postgres-notification
+    environment:
+      POSTGRES_DB: eventflow_notifications
+      POSTGRES_USER: eventflow
+      POSTGRES_PASSWORD: eventflow123
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_notification_data:/var/lib/postgresql/data
+    networks:
+      - eventflow-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eventflow -d eventflow_notifications"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # RabbitMQ Message Broker
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: eventflow-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: eventflow
+      RABBITMQ_DEFAULT_PASS: eventflow123
+    ports:
+      - "5672:5672"   # AMQP port
+      - "15672:15672" # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - eventflow-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Microservices
+  user-service:
+    build:
+      context: ../services/user-service
+      dockerfile: Dockerfile
+    container_name: eventflow-user-service
+    environment:
+      DB_URL: jdbc:postgresql://postgres-user:5432/eventflow_users
+      DB_USER: eventflow
+      DB_PASS: eventflow123
+      JWT_SECRET: ${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-MySecretKey12345}
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres-user:
+        condition: service_healthy
+    networks:
+      - eventflow-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  event-service:
+    build:
+      context: ../services/event-service
+      dockerfile: Dockerfile
+    container_name: eventflow-event-service
+    environment:
+      DB_URL: jdbc:postgresql://postgres-event:5432/eventflow_events
+      DB_USER: eventflow
+      DB_PASS: eventflow123
+      JWT_SECRET: ${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: eventflow
+      RABBITMQ_PASS: eventflow123
+    ports:
+      - "8082:8082"
+    depends_on:
+      postgres-event:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - eventflow-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  notification-service:
+    build:
+      context: ../services/notification-service
+      dockerfile: Dockerfile
+    container_name: eventflow-notification-service
+    environment:
+      DB_URL: jdbc:postgresql://postgres-notification:5432/eventflow_notifications
+      DB_USER: eventflow
+      DB_PASS: eventflow123
+      JWT_SECRET: ${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: eventflow
+      RABBITMQ_PASS: eventflow123
+    ports:
+      - "8083:8083"
+    depends_on:
+      postgres-notification:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - eventflow-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  api-gateway:
+    build:
+      context: ../gateway
+      dockerfile: Dockerfile
+    container_name: eventflow-gateway
+    environment:
+      USER_SERVICE_URL: http://user-service:8081
+      EVENT_SERVICE_URL: http://event-service:8082
+      NOTIFICATION_SERVICE_URL: http://notification-service:8083
+    ports:
+      - "8080:8080"
+    depends_on:
+      - user-service
+      - event-service
+      - notification-service
+    networks:
+      - eventflow-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: eventflow-frontend
+    environment:
+      VITE_API_BASE_URL: http://localhost:8080/api
+    ports:
+      - "5173:80"
+    depends_on:
+      - api-gateway
+    networks:
+      - eventflow-network
+
+volumes:
+  postgres_user_data:
+  postgres_event_data:
+  postgres_notification_data:
+  rabbitmq_data:
+
+networks:
+  eventflow-network:
+    driver: bridge

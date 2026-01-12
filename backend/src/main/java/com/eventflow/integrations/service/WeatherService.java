@@ -3,13 +3,20 @@ package com.eventflow.integrations.service;
 import com.eventflow.common.exception.BusinessException;
 import com.eventflow.integrations.dto.WeatherResponse;
 import com.fasterxml.jackson.databind.JsonNode;
+import io.netty.channel.ChannelOption;
+import io.netty.handler.timeout.ReadTimeoutHandler;
+import io.netty.handler.timeout.WriteTimeoutHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.netty.http.client.HttpClient;
 
+import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -18,6 +25,14 @@ public class WeatherService {
 
     private final WebClient webClient = WebClient.builder()
             .baseUrl("https://api.open-meteo.com/v1")
+            .clientConnector(new ReactorClientHttpConnector(
+                    HttpClient.create()
+                            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000)
+                            .responseTimeout(Duration.ofSeconds(5))
+                            .doOnConnected(conn -> conn
+                                    .addHandlerLast(new ReadTimeoutHandler(5, TimeUnit.SECONDS))
+                                    .addHandlerLast(new WriteTimeoutHandler(5, TimeUnit.SECONDS)))
+            ))
             .build();
 
     public WeatherResponse getWeatherForecast(Double latitude, Double longitude, ZonedDateTime dateTime) {

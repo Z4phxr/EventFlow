@@ -73,6 +73,14 @@ public class EventService {
     }
 
     @Transactional(readOnly = true)
+    public List<EventResponse> getMyEvents(User currentUser) {
+        return eventRepository.findByOrganizerId(currentUser.getId())
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
     public EventResponse getEvent(UUID id) {
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new BusinessException("Event not found"));

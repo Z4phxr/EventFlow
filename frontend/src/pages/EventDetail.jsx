@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../auth/AuthContext';
 import { eventsAPI, registrationsAPI } from '../api';
 
-function EventDetail({ user }) {
+function EventDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [event, setEvent] = useState(null);
   const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
 
   useEffect(() => {
@@ -36,22 +39,28 @@ function EventDetail({ user }) {
   };
 
   const handleRegister = async () => {
+    setActionLoading(true);
     try {
       await registrationsAPI.register(id);
       setMessage({ text: 'Successfully registered!', type: 'success' });
       fetchEventDetails(); // Refresh to update available spots
     } catch (err) {
       setMessage({ text: err.response?.data?.message || 'Registration failed', type: 'error' });
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const handleUnregister = async () => {
+    setActionLoading(true);
     try {
       await registrationsAPI.unregister(id);
       setMessage({ text: 'Successfully unregistered', type: 'success' });
       fetchEventDetails();
     } catch (err) {
       setMessage({ text: err.response?.data?.message || 'Unregister failed', type: 'error' });
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -116,16 +125,20 @@ function EventDetail({ user }) {
         </div>
 
         {weather && (
-          <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#e8f4f8', borderRadius: '4px' }}>
-            <strong>Weather Forecast</strong>
+          <div className="weather-section">
+            <h3>Weather Forecast</h3>
             <p>{weather.forecast}</p>
           </div>
         )}
 
         {user && user.role === 'USER' && event.status === 'PLANNED' && (
           <div className="actions">
-            <button onClick={handleRegister}>Register for Event</button>
-            <button onClick={handleUnregister} className="secondary">Unregister</button>
+            <button onClick={handleRegister} disabled={actionLoading}>
+              {actionLoading ? 'Processing...' : 'Register for Event'}
+            </button>
+            <button onClick={handleUnregister} className="secondary" disabled={actionLoading}>
+              {actionLoading ? 'Processing...' : 'Unregister'}
+            </button>
           </div>
         )}
       </div>

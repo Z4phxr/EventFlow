@@ -22,11 +22,15 @@ spring:
     baseline-on-migrate: true
 
 # JWT Configuration
+# SECURITY WARNING: Default values below are for DEVELOPMENT ONLY
+# ALWAYS set JWT_SECRET and ENCRYPTION_KEY via environment variables in production
 jwt:
   secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
   expiration: 86400000 # 24 hours
 
 # Encryption Configuration
+# SECURITY WARNING: Default key is for DEVELOPMENT ONLY
+# ALWAYS set ENCRYPTION_KEY via environment variable in production
 encryption:
   key: ${ENCRYPTION_KEY:MySecretKey12345} # Must be 16 characters for AES
 

@@ -1,620 +1,453 @@
 # EventFlow - Event Management System
 
-A full-stack event management system built with Spring Boot 3 and React, designed for university project requirements with a clear upgrade path to microservices architecture.
+A REST-based event management system built with Java Spring Boot microservices and React. EventFlow enables users to browse and register for events, allows organizers to create and manage events, and provides administrators with system oversight capabilities. The system integrates external APIs for geocoding and weather forecasting, implements JWT-based authentication, and uses PostgreSQL for persistent data storage.
 
-## 🎯 Project Overview
+## Architecture
 
-EventFlow is a production-quality event management platform that allows:
-- **Users** to browse and register for events
-- **Organizers** to create and manage events
-- **Admins** to oversee the entire system
+**Grade 4.0 (Monolith):** Single Spring Boot application with all modules  
+**Grade 5.0 (Microservices):** Distributed architecture with:
+- **user-service** (Port 8081) - Authentication & user management
+- **event-service** (Port 8082) - Events, registrations & external APIs
+- **notification-service** (Port 8083) - Notifications (stub for Part 2)
+- **api-gateway** (Port 8080) - Single entry point with routing
+- **3 PostgreSQL databases** - One per service
 
-The system integrates external APIs (geocoding and weather), implements security best practices, and is designed with event-driven architecture principles for easy migration to microservices.
+## Technology Stack
 
-## 🏗️ Architecture
+- Java 17
+- Spring Boot 3 & Spring Cloud Gateway
+- Spring Security with JWT authentication
+- PostgreSQL (3 databases for microservices)
+- Flyway (database migrations)
+- Spring Data JPA / Hibernate
+- External APIs: OpenStreetMap Nominatim (geocoding), Open-Meteo (weather)
+- React with Vite (frontend)
+- Docker & Docker Compose
 
-### Current (Monolith - Grade 4.0)
-- **Backend**: Spring Boot 3 REST API
-- **Frontend**: React + Vite SPA
-- **Database**: PostgreSQL (or H2 in-memory for testing)
-- **Security**: JWT-based authentication
-- **External APIs**: OpenStreetMap Nominatim (geocoding), Open-Meteo (weather)
+## Main Features
 
-### Future Path (Grade 5.0)
-The codebase is structured to support easy migration to:
-- Event-driven architecture using RabbitMQ
-- Microservices: Auth Service, Events Service, Registrations Service
-- API Gateway pattern
+- User registration and authentication with JWT tokens
+- Role-based access control (USER, ORGANIZER, ADMIN)
+- Full CRUD operations for event management
+- Event registration system with capacity enforcement
+- External API integration for location geocoding and weather forecasts
+- REST API with proper HTTP semantics and status codes
+- API documentation with OpenAPI/Swagger UI per service
+- Microservices architecture with API Gateway
 
-Look for `TODO: For grade 5.0` comments in the code for upgrade points.
-
-## 📁 Project Structure
-
-```
-eventflow/
-├── backend/                    # Spring Boot application
-│   ├── src/main/java/com/eventflow/
-│   │   ├── auth/              # Authentication module
-│   │   ├── users/             # User management
-│   │   ├── events/            # Event management
-│   │   ├── registrations/     # Event registrations
-│   │   ├── integrations/      # External API integrations
-│   │   └── common/            # Shared components
-│   │       ├── security/      # JWT, filters, config
-│   │       ├── events/        # Domain events (RabbitMQ ready)
-│   │       ├── exception/     # Global error handling
-│   │       ├── encryption/    # Email encryption
-│   │       └── config/        # OpenAPI config
-│   ├── src/main/resources/
-│   │   ├── application.yml    # Configuration
-│   │   └── db/migration/      # Flyway SQL scripts
-│   └── pom.xml                # Maven dependencies
-├── frontend/                   # React application
-│   ├── src/
-│   │   ├── components/        # Reusable components
-│   │   ├── pages/             # Page components
-│   │   ├── api.js             # API client
-│   │   └── App.jsx            # Main app component
-│   └── package.json
-├── docker/
-│   └── docker-compose.yml     # PostgreSQL (+ RabbitMQ ready)
-└── README.md
-```
-
-## 🚀 Quick Start
+## How to Run the Project
 
 ### Prerequisites
 
-**Required:**
-- **Java 17+** - [Download JDK](https://adoptium.net/)
-- **Maven 3.8+** - [Download Maven](https://maven.apache.org/download.cgi)
-- **Node.js 18+** - [Download Node.js](https://nodejs.org/)
+- Java 17 or higher
+- Maven 3.8 or higher
+- Node.js 18 or higher (for local frontend development)
+- Docker Desktop (recommended for microservices)
 
-**Optional (for PostgreSQL):**
-- **Docker Desktop** - [Download Docker](https://www.docker.com/products/docker-desktop/)
-- **OR PostgreSQL 15** - [Download PostgreSQL](https://www.postgresql.org/download/)
+### Option 1: Microservices Mode (Grade 5.0) - Recommended
 
-### Installation Steps
+This runs the full microservices architecture with API Gateway.
 
-#### 1. Install Java 17
-1. Download from https://adoptium.net/
-2. Install and add to PATH
-3. Verify: `java -version`
-
-#### 2. Install Maven
-1. Download from https://maven.apache.org/download.cgi
-2. Extract to `C:\Program Files\Maven`
-3. Add to PATH: `C:\Program Files\Maven\bin`
-4. Verify: `mvn -version`
-
-#### 3. Install Node.js
-1. Download from https://nodejs.org/
-2. Install (includes npm)
-3. Verify: `node -v` and `npm -v`
-
-### Running the Application
-
-#### Option A: Quick Start (H2 In-Memory Database)
-**Easiest way - no database setup needed!**
-
-**Terminal 1 - Backend:**
-```powershell
-cd backend
-mvn clean install -DskipTests
-mvn spring-boot:run -Dspring-boot.run.profiles=h2
-```
-
-**Terminal 2 - Frontend:**
-```powershell
-cd frontend
-npm install
-npm run dev
-```
-
-### Running the Application (recommended: Docker Compose)
-
-Najprostszy i spójny sposób uruchomienia całego stosu to użycie Docker Compose.
-
-1) Przygotuj backend JAR (jeśli nie chcesz budować JAR lokalnie z zainstalowanym Mavenem):
-
-- Windows (PowerShell):
-```powershell
-docker run --rm -v "${PWD/\//\\}/backend":/workspace -w /workspace maven:3.8.8-eclipse-temurin-17 mvn -B -DskipTests clean package
-```
-- macOS / Linux:
 ```bash
-docker run --rm -v $(pwd)/backend:/workspace -w /workspace maven:3.8.8-eclipse-temurin-17 mvn -B -DskipTests clean package
+# Navigate to docker directory
+cd docker
+
+# Start all microservices (3 databases, 3 services, gateway, frontend)
+docker compose -f docker-compose-microservices.yml up -d --build
+
+# Check logs for a specific service
+docker compose -f docker-compose-microservices.yml logs --follow user-service
+docker compose -f docker-compose-microservices.yml logs --follow event-service
+docker compose -f docker-compose-microservices.yml logs --follow api-gateway
+
+# Stop all services
+docker compose -f docker-compose-microservices.yml down
 ```
 
-2) Uruchom docker compose (z katalogu `docker`):
+**Access Points:**
+- **Frontend**: http://localhost:5173
+- **API Gateway**: http://localhost:8080
+- **User Service Swagger**: http://localhost:8081/swagger-ui.html
+- **Event Service Swagger**: http://localhost:8082/swagger-ui.html
+- **Notification Service Swagger**: http://localhost:8083/swagger-ui.html
+
+**Service Ports:**
+- API Gateway: 8080 (main entry point)
+- User Service: 8081
+- Event Service: 8082
+- Notification Service: 8083
+- PostgreSQL User DB: 5432
+- PostgreSQL Event DB: 5433
+- PostgreSQL Notification DB: 5434
+- RabbitMQ AMQP: 5672
+- RabbitMQ Management: 15672
+
+### Option 2: Monolith Mode (Grade 4.0)
+
+Run the original monolithic backend.
 
 ```bash
 cd docker
 docker compose up -d --build
 ```
 
-- To zbuduje obrazy i uruchomi: PostgreSQL, backend oraz frontend.
-- Jeżeli chcesz wymusić przebudowę backendu:
-```bash
-docker compose build --no-cache backend
-docker compose up -d --force-recreate backend
-```
-
-3) Sprawdź logi i statusy:
-
-```bash
-docker compose ps
-docker compose logs --follow backend
-```
-
-4) Dostęp:
-
+Access:
 - Frontend: http://localhost:5173
 - Backend API: http://localhost:8080
+- Swagger UI: http://localhost:8080/swagger-ui.html
 
-5) Zatrzymanie i usunięcie kontenerów:
+### Option 3: Local Development (Individual Services)
 
+Run services locally without Docker for development.
+
+**Terminal 1 - User Service:**
 ```bash
-docker compose down
+cd services/user-service
+mvn clean install -DskipTests
+mvn spring-boot:run
 ```
 
-Jeżeli wolisz uruchamiać usługi lokalnie bez Dockera, instrukcje dla backendu i frontendu (Maven / Node) znajdują się poniżej w sekcji "Option A / H2".
-
----
-
-### Authentication Endpoints
-
-#### Register
-```http
-POST /api/auth/register
-Content-Type: application/json
-
-{
-  "username": "john_doe",
-  "email": "john@example.com",
-  "password": "password123",
-  "role": "USER"
-}
-
-Response: 201 Created
-{
-  "token": "eyJhbGciOiJIUzI1...",
-  "username": "john_doe",
-  "role": "USER"
-}
-```
-
-#### Login
-```http
-POST /api/auth/login
-Content-Type: application/json
-
-{
-  "username": "john_doe",
-  "password": "password123"
-}
-
-Response: 200 OK
-{
-  "token": "eyJhbGciOiJIUzI1...",
-  "username": "john_doe",
-  "role": "USER"
-}
-```
-
-### Event Endpoints
-
-#### Create Event (ORGANIZER/ADMIN)
-```http
-POST /api/events
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "title": "Tech Conference 2026",
-  "description": "Annual technology conference",
-  "startAt": "2026-06-15T09:00:00Z",
-  "endAt": "2026-06-15T18:00:00Z",
-  "address": "123 Tech Street, Warsaw, Poland",
-  "city": "Warsaw",
-  "capacity": 100
-}
-
-Response: 201 Created
-```
-
-#### Get All Events (Public)
-```http
-GET /api/events?city=Warsaw&status=PLANNED&dateFrom=2026-01-01T00:00:00Z
-
-Response: 200 OK
-[
-  {
-    "id": "uuid",
-    "title": "Tech Conference 2026",
-    "city": "Warsaw",
-    "startAt": "2026-06-15T09:00:00Z",
-    "capacity": 100,
-    "availableSpots": 75,
-    "status": "PLANNED",
-    ...
-  }
-]
-```
-
-#### Get Event Weather
-```http
-GET /api/events/{id}/weather
-
-Response: 200 OK
-{
-  "temperature": 22.5,
-  "condition": "Clear",
-  "forecast": "Temperature: 22.5°C, Max: 25.0°C, Min: 20.0°C, Precipitation: 0.0mm"
-}
-```
-
-#### Update Event (Owner/ADMIN)
-```http
-PUT /api/events/{id}
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "title": "Updated Title",
-  "capacity": 150
-}
-
-Response: 200 OK
-```
-
-#### Delete Event (Owner/ADMIN)
-```http
-DELETE /api/events/{id}
-Authorization: Bearer <token>
-
-Response: 204 No Content
-```
-
-### Registration Endpoints
-
-#### Register to Event (USER)
-```http
-POST /api/events/{id}/registrations
-Authorization: Bearer <token>
-
-Response: 201 Created
-{
-  "id": "uuid",
-  "eventId": "uuid",
-  "userId": "uuid",
-  "status": "REGISTERED",
-  "createdAt": "2026-01-07T12:00:00"
-}
-```
-
-#### Unregister from Event (USER)
-```http
-DELETE /api/events/{id}/registrations/me
-Authorization: Bearer <token>
-
-Response: 204 No Content
-```
-
-#### Get Event Registrations (ORGANIZER/ADMIN)
-```http
-GET /api/events/{id}/registrations
-Authorization: Bearer <token>
-
-Response: 200 OK
-[...]
-```
-
-## 🔐 Security Features
-
-### JWT Authentication
-- Stateless authentication
-- 24-hour token expiration
-- Role-based access control (USER, ORGANIZER, ADMIN)
-
-### Data Encryption
-- Email addresses encrypted at rest using AES
-- Encryption key configurable via environment variable
-
-### Authorization Rules
-- **Public**: View events, event details
-- **USER**: Register/unregister for events
-- **ORGANIZER**: Create/update/delete own events
-- **ADMIN**: Full system access
-
-## 🧪 Testing
-
-### Run Tests
+**Terminal 2 - Event Service:**
 ```bash
-cd backend
-mvn test
+cd services/event-service
+mvn clean install -DskipTests
+mvn spring-boot:run
 ```
 
-Tests use Testcontainers for PostgreSQL integration testing.
-
-### Test Coverage
-- Auth: Registration, login, duplicate username validation
-- Events: CRUD operations, filters, authorization
-- Integration: Full request/response cycles
-
-## 🌐 External API Integrations
-
-### Geocoding (OpenStreetMap Nominatim)
-- Automatically converts event addresses to lat/lon coordinates
-- Free, no API key required
-- Rate-limited: respects usage policies
-
-### Weather (Open-Meteo)
-- Provides weather forecasts for event dates
-- Free, no API key required
-- Returns temperature, precipitation, and conditions
-
-## 🔄 Event-Driven Architecture (Upgrade Path)
-
-The system implements domain events that are currently logged locally but can be easily upgraded to RabbitMQ:
-
-### Domain Events
-- `EventCreated`
-- `EventUpdated`
-- `EventCancelled`
-- `UserRegisteredToEvent`
-- `UserUnregisteredFromEvent`
-
-### Implementation
-See `LocalDomainEventPublisher.java` - replace with RabbitMQ template to enable message-based communication.
-
-```java
-// Current (Grade 4.0)
-eventPublisher.publish(new EventCreated(...));
-// Logs event
-
-// Future (Grade 5.0)
-// Same code, different implementation
-// Publishes to RabbitMQ exchange
+**Terminal 3 - Notification Service:**
+```bash
+cd services/notification-service
+mvn clean install -DskipTests
+mvn spring-boot:run
 ```
 
-## 📊 Database Schema
-
-### Users Table
-```sql
-- id (UUID, PK)
-- username (VARCHAR, UNIQUE)
-- encrypted_email (TEXT)
-- password (VARCHAR)
-- role (VARCHAR)
-- enabled (BOOLEAN)
-- created_at, updated_at (TIMESTAMP)
+**Terminal 4 - API Gateway:**
+```bash
+cd gateway
+mvn clean install -DskipTests
+mvn spring-boot:run
 ```
 
-### Events Table
-```sql
-- id (UUID, PK)
-- title, description (VARCHAR/TEXT)
-- start_at, end_at (TIMESTAMP WITH TIMEZONE)
-- address, city (VARCHAR)
-- latitude, longitude (DOUBLE)
-- capacity (INTEGER)
-- status (VARCHAR: PLANNED/CANCELLED/FINISHED)
-- organizer_id (UUID, FK → users)
-- created_at, updated_at (TIMESTAMP)
+**Terminal 5 - Frontend:**
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
-### Registrations Table
-```sql
-- id (UUID, PK)
-- event_id (UUID, FK → events)
-- user_id (UUID, FK → users)
-- status (VARCHAR: REGISTERED/CANCELLED)
-- created_at (TIMESTAMP)
-- UNIQUE(event_id, user_id)
-```
-
-## 🛠️ Configuration
+**Note**: You need to have 3 PostgreSQL databases running locally or update `application.yml` in each service to use H2.
 
 ### Environment Variables
 
-#### Required
-- `DB_URL` - Database connection URL
+For production deployment, configure the following environment variables:
+
+- `DB_URL` - PostgreSQL connection URL (per service)
 - `DB_USER` - Database username
 - `DB_PASS` - Database password
-- `JWT_SECRET` - Secret key for JWT signing (base64 encoded)
-- `ENCRYPTION_KEY` - 16-character key for AES encryption
+- `JWT_SECRET` - Secret key for JWT signing (must be same across all services)
+- `ENCRYPTION_KEY` - 16-character key for AES encryption (user-service only)
 
-#### Optional
-- `JWT_EXPIRATION` - Token expiration in milliseconds (default: 86400000)
+Default values in `application.yml` are for development only.
 
-### Application Profiles
+## Testing the Microservices Architecture
 
-#### Development (`dev`)
+### 1. Verify All Services Are Running
+
 ```bash
-mvn spring-boot:run -Dspring-boot.run.profiles=dev
-```
-- Detailed SQL logging
-- Debug-level logging
-
-#### Test (`test`)
-- Separate test database
-- Used by Testcontainers
-
-## 🚢 Deployment
-
-### Build Backend JAR
-```bash
-cd backend
-mvn clean package
-java -jar target/eventflow-backend-1.0.0.jar
+# Check service health
+curl http://localhost:8080/actuator/health  # API Gateway
+curl http://localhost:8081/actuator/health  # User Service
+curl http://localhost:8082/actuator/health  # Event Service
+curl http://localhost:8083/actuator/health  # Notification Service
 ```
 
-### Build Frontend Production
+### 2. Test Authentication Flow Through Gateway
+
+**Register a new user:**
+```bash
+curl -X POST http://localhost:8080/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john@example.com",
+    "password": "password123",
+    "role": "ORGANIZER"
+  }'
+```
+
+**Login to get JWT token:**
+```bash
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "john@example.com",
+    "password": "password123"
+  }'
+```
+
+Save the `token` from the response.
+
+### 3. Test Event Creation Through Gateway
+
+```bash
+curl -X POST http://localhost:8080/api/events \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -d '{
+    "name": "Spring Conference 2024",
+    "description": "Annual Spring Framework conference",
+    "startDate": "2024-06-15T09:00:00",
+    "endDate": "2024-06-15T17:00:00",
+    "location": "Warsaw, Poland",
+    "maxAttendees": 100
+  }'
+```
+
+### 4. Verify Cross-Service Routing
+
+- Authentication requests → routed to user-service (8081)
+- Event requests → routed to event-servi
+
+## Testing RabbitMQ Integration
+
+### Run Automated Demo
+
+```powershell
+.\demo-rabbitmq.ps1
+```
+
+This script demonstrates the complete event-driven flow:
+1. Register organizer and create event
+2. Verify EVENT_CREATED notification is generated automatically
+3. Register attendee to event
+4. Verify REGISTRATION_CONFIRMED notification is generated
+
+### Manual RabbitMQ Verification
+
+1. **Access RabbitMQ Management UI:**
+   - URL: http://localhost:15672
+   - Username: `eventflow`
+   - Password: `eventflow123`
+
+2. **Verify Exchange and Queue:**
+   - Navigate to "Exchanges" → see `eventflow.exchange`
+   - Navigate to "Queues" → see `notification.queue` with 5 bindings
+
+3. **Check Service Logs:**
+   ```powershell
+   # Event service (publisher)
+   docker compose -f docker/docker-compose-microservices.yml logs --follow event-service
+   
+   # Notification service (consumer)
+   docker compose -f docker/docker-compose-microservices.yml logs --follow notification-service
+   ```
+
+4. **Expected Log Output:**
+   - event-service: "Published event EVENT_CREATED with routing key event.created"
+   - notification-service: "Received message from RabbitMQ" → "Saved notification"
+
+For detailed verification steps, see [RABBITMQ_VERIFICATION.md](RABBITMQ_VERIFICATION.md)ce (8082)
+- Notification requests → routed to notification-service (8083)
+- All requests go through gateway (8080)
+
+## API Documentation
+
+**Microservices Mode:**
+- API Gateway: http://localhost:8080 (routes to all services)
+- User Service: http://localhost:8081/swagger-ui.html
+- Event Service: http://localhost:8082/swagger-ui.html
+- Notification Service: http://localhost:8083/swagger-ui.html
+
+**Monolith Mode:**
+- Backend API: http://localhost:8080/swagger-ui.html
+
+All requests from the frontend go through the API Gateway which routes them to the appropriate service.
+
+## Microservices Architecture Details
+
+### Service Responsibilities
+
+**user-service:**
+- User registration and authentication
+- JWT token generation
+- User management and roles
+- Database: `users` table
+
+**event-service:**
+- Events CRUD operations
+- Event registrations with capacity rules
+- External API integration (geocoding, weather)
+- Database: `events`, `registrations` tables
+
+**notification-service:**
+- Notification storage and retrieval
+- Consumes domain events from RabbitMQ
+- Creates notifications asynchronously
+- Database: `notifications` table
+
+**rabbitmq:**
+- Message broker for async communication
+- Exchange: `eventflow.exchange` (topic)
+- Queue: `notification.queue`
+- Handles event routing between services
+
+**api-gateway:**
+- Single entry point for all API requests
+- Routes requests to appropriate services:
+  - `/api/auth/**` → user-service
+  - `/api/users/**` →           # Publishes to RabbitMQ
+│   └── notification-service/   # Consumes from RabbitMQ
+├── gateway/                    # API Gateway
+├── frontend/                   # React application
+├── docker/
+│   ├── docker-compose.yml                    # Grade 4.0
+│   └── docker-compose-microservices.yml      # Grade 5.0 + RabbitMQ
+├── demo-rabbitmq.ps1           # Automated RabbitMQ demo
+└── RABBITMQ_VERIFICATION.md    # Detailed verification guide
+
+- **Frontend → API Gateway** - All requests go through gateway (HTTP/REST)
+- **API Gateway → Services** - HTTP routing based on path
+- **Services validate JWT independently** - Shared JWT secret
+- **event-service → RabbitMQ** - Publishes domain events asynchronously
+- **RabbitMQ → notification-service** - Delivers events for notification creation
+- **No synchronous inter-service calls** - Services are loosely coupled via message broker
+5672, 15672, and 5173 are available
+3. Try rebuilding: `docker compose -f docker/docker-compose-microservices.yml up -d --build --force-recreate`
+
+### RabbitMQ Connection Issues
+
+- Check RabbitMQ health: `docker compose -f docker/docker-compose-microservices.yml ps rabbitmq`
+- Wait for RabbitMQ to be ready (~10 seconds after container starts)
+- Restart services: `docker compose -f docker/docker-compose-microservices.yml restart event-service notification-service`
+- Check RabbitMQ logs: `docker compose -f docker/docker-compose-microservices.yml logs rabbitmq
+
+**Published Events (event-service):**
+- `event.created` - When new event is created
+- `event.updated` - When event details are updated
+- `event.deleted` - When event is deleted
+- `registration.created` - When user registers to event
+- `registration.deleted` - When user unregisters from event
+
+**Consumed Events (notification-service):**
+- Listens to all event types on `notification.queue`
+- Creates user notifications automatically
+- Ensures idempotency using `externalMessageId`
+
+**RabbitMQ Configuration:**
+- Exchange: `eventflow.exchange` (Topic Exchange)
+- Queue: `notification.queue` (durable)
+- Routing: Topic patterns match routing keys
+- Management UI: http://localhost:15672 (eventflow/eventflow123)
+
+### Directory Structure
+
+```
+EventFlow/
+├── backend/                    # Grade 4.0 monolith
+├── services/                   # Grade 5.0 microservices
+│   ├── user-service/
+│   ├── event-service/
+│   └── notification-service/
+├── gateway/                    # API Gateway
+├── frontend/                   # React application
+└── docker/
+    ├── docker-compose.yml                    # Grade 4.0
+    └── docker-compose-microservices.yml      # Grade 5.0
+```
+
+## Troubleshooting
+
+### Services Not Starting
+
+1. Check Docker logs: `docker compose -f docker/docker-compose-microservices.yml logs`
+2. Ensure ports 8080-8083, 5432-5434, and 5173 are available
+3. Try rebuilding: `docker compose -f docker/docker-compose-microservices.yml up -d --build --force-recreate`
+
+### Database Connection Issues
+
+- Wait for database healthchecks to pass (check logs)
+- Services have `depends_on` with healthcheck conditions
+- PostgreSQL takes ~10 seconds to initialize
+
+### JWT Authentication Fails
+
+- # Notifications Not Being Created
+
+- Verify RabbitMQ is running: http://localhost:15672
+- Check event-service logs for "Published event" messages
+- Check notification-service logs for "Received message" and "Saved notification" messages
+- Verify queue bindings in RabbitMQ Management UI
+- Run demo script: `.\demo-rabbitmq.ps1`
+
+## Project Status
+
+**Grade 4.0:** Monolithic Spring Boot application with REST API - COMPLETED ✅  
+**Grade 5.0 Part 1:** Microservices architecture with API Gateway - COMPLETED ✅  
+**Grade 5.0 Part 2:** RabbitMQ integration for async domain events - COMPLETED ✅
+
+**All Grade 5.0 requirements satisfied:**
+- ✅ Microservices architecture (user, event, notification services)
+- ✅ API Gateway for routing
+- ✅ RabbitMQ message broker for asynchronous communication
+- ✅ Event-driven architecture with domain events
+- ✅ Independent databases per service
+- ✅ Docker Compose orchestration
+- ✅ Full CRUD REST APIs with authentication
+- ✅ React frontend with JWT auth and role-based access
+- ✅ Notifications page displaying async message results
+- ✅ Demo dashboard with microservices visualization and live testing
+
+## Frontend Application
+
+The React frontend provides a clean, demo-ready interface with:
+
+**Part 1 - Core Features**:
+- JWT-based authentication with automatic token handling
+- Role-based navigation (USER, ORGANIZER, ADMIN)
+- Events browsing with filters (city, status)
+- Event details with weather integration
+- User registration/unregistration for events
+- Organizer dashboard for event management (create, edit, delete)
+
+**Part 2 - Grade 5.0 Demonstration**:
+- **Notifications Page** (`/notifications`): Real-time display of notifications generated by RabbitMQ consumers
+- **Demo Dashboard** (`/demo`): Interactive visualization of microservices architecture, service health monitoring, and async flow demonstration
+- **Microservices Visualization**: HTML/CSS diagram showing Frontend → Gateway → Services → RabbitMQ flow
+- **Live Demo Actions**: Create events and register users to prove producer-consumer async flow
+
+**For detailed frontend documentation**:
+- Core features: [frontend/FRONTEND_README.md](frontend/FRONTEND_README.md)
+- Part 2 features: [frontend/PART2_IMPLEMENTATION.md](frontend/PART2_IMPLEMENTATION.md)
+- Quick verification: [frontend/PART2_VERIFICATION.md](frontend/PART2_VERIFICATION.md)
+
+Quick start:
 ```bash
 cd frontend
-npm run build
-# Serve dist/ folder with nginx or similar
-```
-
-### Docker Deployment (Optional)
-Create Dockerfiles for backend and frontend, then use Docker Compose for full stack deployment.
-
-## 📈 Upgrade to Microservices (Grade 5.0)
-
-### Step 1: Enable RabbitMQ
-Uncomment RabbitMQ service in `docker/docker-compose.yml` and start it.
-
-### Step 2: Replace Event Publisher
-Replace `LocalDomainEventPublisher` with RabbitMQ implementation:
-- Add Spring AMQP dependency
-- Configure RabbitTemplate
-- Implement message serialization
-- Define exchanges and queues
-
-### Step 3: Split into Services
-The modular package structure supports easy extraction:
-- **Auth Service**: `auth/` + `users/`
-- **Events Service**: `events/`
-- **Registrations Service**: `registrations/`
-
-Each module has its own controllers, services, and repositories.
-
-### Step 4: Add API Gateway
-Use Spring Cloud Gateway or similar to route requests.
-
-## 🐛 Troubleshooting
-
-### "mvn is not recognized" or "java is not recognized"
-**Solution:** Install Java and Maven and add them to your system PATH
-1. Windows: Search "Environment Variables" → Edit System Environment Variables → PATH
-2. Add Java bin directory: `C:\Program Files\Eclipse Adoptium\jdk-17\bin`
-3. Add Maven bin directory: `C:\Program Files\Maven\bin`
-4. Restart terminal/IDE
-
-### "npm is not recognized"
-**Solution:** Install Node.js from https://nodejs.org/
-
-### Database Connection Issues (PostgreSQL)
-- **H2 Alternative:** Use `mvn spring-boot:run -Dspring-boot.run.profiles=h2` instead
-- **Docker not running:** Start Docker Desktop, then run `docker-compose up -d`
-- **Port 5432 in use:** Stop other PostgreSQL instances or change port in docker-compose.yml
-
-### Backend Compilation Errors
-```powershell
-# Clean and rebuild
-cd backend
-mvn clean install -DskipTests
-```
-
-### Frontend Not Loading
-```powershell
-# Clear node_modules and reinstall
-cd frontend
-Remove-Item -Recurse -Force node_modules
 npm install
 npm run dev
+# Access at http://localhost:5173
 ```
 
-### JWT Token Errors
-- Ensure `JWT_SECRET` in application.yml or .env is properly set
-- Default secret works for development
+All API requests route through the gateway at `http://localhost:8080/api` (configured via `VITE_API_BASE_URL` in `.env`).
 
-### Port Already in Use
-- Backend (8080): Change `server.port` in application.yml
-- Frontend (5173): Change port in vite.config.js
-- PostgreSQL (5432): Change port in docker-compose.yml
+## Troubleshooting
 
-### External APIs Not Working
-- Geocoding/Weather APIs are external and may be temporarily unavailable
-- App will work without them, but coordinates/weather won't be available
+- Verify API Gateway is running: `curl http://localhost:8080/actuator/health`
+- Check browser console for CORS errors
+- Frontend should use `http://localhost:8080/api` as base URL (configured via `VITE_API_BASE_URL`)
+- For 401 errors, logout and login again (token may be expired)
 
----
+## Project Status
 
-## 📝 Quick Commands Reference
+**Grade 5.0 Implementation Complete**:
+- ✅ Microservices architecture with API Gateway
+- ✅ RabbitMQ integration for async domain events
+- ✅ Frontend Part 1: Authentication, events, organizer dashboard
+- ✅ Frontend Part 2: Notifications page and microservices demo dashboard
 
-### Backend
-```powershell
-# Build project
-mvn clean install
+**All Grade 5.0 requirements implemented and demonstrable through UI!**
 
-# Run with H2 (no database needed)
-mvn spring-boot:run -Dspring-boot.run.profiles=h2
+## License
 
-# Run with PostgreSQL
-mvn spring-boot:run
-
-# Run tests
-mvn test
-
-# Skip tests during build
-mvn clean install -DskipTests
-```
-
-### Frontend
-```powershell
-# Install dependencies
-npm install
-
-# Run development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
-```
-
-### Docker
-```powershell
-# Start services
-docker-compose up -d
-
-# Stop services
-docker-compose down
-
-# View logs
-docker-compose logs -f
-
-# Restart services
-docker-compose restart
-```
-
----
-
-## 🎓 For University Grading
-
-### Grade 4.0 Features Implemented
-✅ Full CRUD REST API  
-✅ PostgreSQL integration with Flyway migrations  
-✅ External API integration (geocoding + weather)  
-✅ JWT authentication & authorization  
-✅ Role-based access control  
-✅ Email encryption at rest  
-✅ Data validation  
-✅ Global exception handling  
-✅ OpenAPI/Swagger documentation  
-✅ Integration tests with Testcontainers  
-✅ React frontend with login/register/CRUD  
-
-### Grade 5.0 Preparation
-✅ Event-driven architecture abstraction ready  
-✅ Domain events defined  
-✅ Modular package structure for microservices split  
-✅ RabbitMQ configuration prepared (commented)  
-✅ Clear TODO markers for upgrade points  
-
-## 👥 Authors
-
-Created as a university project demonstrating production-quality software engineering practices.
-
-## 📄 License
-
-MIT License - Free to use for educational purposes.
-
----
-
-**Swagger UI**: http://localhost:8080/swagger-ui.html  
-**Frontend**: http://localhost:5173  
-**RabbitMQ Management** (when enabled): http://localhost:15672
+This project is for academic purposes as part of Network Applications course (Grade 5.0 requirements).

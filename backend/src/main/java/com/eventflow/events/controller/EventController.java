@@ -57,6 +57,17 @@ public class EventController {
         return ResponseEntity.ok(events);
     }
 
+    @GetMapping("/my")
+    @PreAuthorize("hasAnyRole('ORGANIZER', 'ADMIN')")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Get events created by current organizer")
+    public ResponseEntity<List<EventResponse>> getMyEvents(
+            @AuthenticationPrincipal User currentUser
+    ) {
+        List<EventResponse> events = eventService.getMyEvents(currentUser);
+        return ResponseEntity.ok(events);
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Get event by ID")
     public ResponseEntity<EventResponse> getEvent(@PathVariable UUID id) {

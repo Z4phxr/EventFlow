@@ -1,10 +1,20 @@
 import { useState, useEffect } from 'react';
 import { eventsAPI } from '../api';
+import Card from '../components/Card';
+import Button from '../components/Button';
+import Input from '../components/Input';
+import Textarea from '../components/Textarea';
+import Badge from '../components/Badge';
+import Modal from '../components/Modal';
+import Spinner from '../components/Spinner';
+import Alert from '../components/Alert';
 
 function OrganizerDashboard() {
   const [events, setEvents] = useState([]);
-  const [showForm, setShowForm] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [showFormModal, setShowFormModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
+  const [deleteModalEvent, setDeleteModalEvent] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -15,6 +25,7 @@ function OrganizerDashboard() {
     capacity: ''
   });
   const [message, setMessage] = useState({ text: '', type: '' });
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     fetchMyEvents();
@@ -22,19 +33,33 @@ function OrganizerDashboard() {
 
   const fetchMyEvents = async () => {
     try {
-      const response = await eventsAPI.getAll();
+      setLoading(true);
+      const response = await eventsAPI.getMyEvents();
       setEvents(response.data);
     } catch (err) {
       console.error('Failed to fetch events:', err);
+      setMessage({ text: 'Failed to load events', type: 'error' });
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const formatDateForDisplay = (dateString) => {
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(new Date(dateString));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage({ text: '', type: '' });
+    setActionLoading(true);
 
     try {
-      // Convert datetime-local to ISO format
       const data = {
         ...formData,
         startAt: new Date(formData.startAt).toISOString(),
@@ -57,6 +82,8 @@ function OrganizerDashboard() {
         text: err.response?.data?.message || 'Operation failed', 
         type: 'error' 
       });
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -71,18 +98,26 @@ function OrganizerDashboard() {
       city: event.city || '',
       capacity: event.capacity.toString()
     });
-    setShowForm(true);
+    setShowFormModal(true);
+    setMessage({ text: '', type: '' });
   };
 
-  const handleDelete = async (eventId) => {
-    if (!confirm('Are you sure you want to delete this event?')) return;
+  const handleDeleteConfirm = async () => {
+    if (!deleteModalEvent) return;
 
+    setActionLoading(true);
     try {
-      await eventsAPI.delete(eventId);
+      await eventsAPI.delete(deleteModalEvent.id);
       setMessage({ text: 'Event deleted successfully', type: 'success' });
       fetchMyEvents();
+      setDeleteModalEvent(null);
     } catch (err) {
-      setMessage({ text: 'Failed to delete event', type: 'error' });
+      setMessage({ 
+        text: err.response?.data?.message || 'Failed to delete event', 
+        type: 'error' 
+      });
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -97,130 +132,232 @@ function OrganizerDashboard() {
       capacity: ''
     });
     setEditingEvent(null);
-    setShowForm(false);
+    setShowFormModal(false);
   };
 
+  if (loading) {
+    return <Spinner.Container>Loading your events...</Spinner.Container>;
+  }
+
   return (
-    <div className="container">
-      <h1>Organizer Dashboard</h1>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">My Dashboard</h1>
+          <p className="text-gray-600 mt-1">Manage your events</p>
+        </div>
+        <Button onClick={() => {
+          resetForm();
+          setShowFormModal(true);
+        }}>
+          Create Event
+        </Button>
+      </div>
 
       {message.text && (
-        <div className={message.type}>{message.text}</div>
+        <Alert 
+          variant={message.type === 'success' ? 'success' : 'error'} 
+          onClose={() => setMessage({ text: '', type: '' })}
+        >
+          {message.text}
+        </Alert>
       )}
 
-      <button onClick={() => setShowForm(!showForm)}>
-        {showForm ? 'Cancel' : 'Create New Event'}
-      </button>
-
-      {showForm && (
-        <div className="card" style={{ marginTop: '1.5rem' }}>
-          <h2>{editingEvent ? 'Edit Event' : 'Create Event'}</h2>
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label>Title *</label>
-              <input
-                type="text"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Description</label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                rows="3"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Start Date & Time *</label>
-              <input
-                type="datetime-local"
-                value={formData.startAt}
-                onChange={(e) => setFormData({ ...formData, startAt: e.target.value })}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label>End Date & Time *</label>
-              <input
-                type="datetime-local"
-                value={formData.endAt}
-                onChange={(e) => setFormData({ ...formData, endAt: e.target.value })}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Address *</label>
-              <input
-                type="text"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label>City</label>
-              <input
-                type="text"
-                value={formData.city}
-                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Capacity *</label>
-              <input
-                type="number"
-                value={formData.capacity}
-                onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
-                required
-                min="1"
-              />
-            </div>
-
-            <div className="actions">
-              <button type="submit">
-                {editingEvent ? 'Update Event' : 'Create Event'}
-              </button>
-              <button type="button" onClick={resetForm} className="secondary">
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      <h2 style={{ marginTop: '2rem' }}>My Events</h2>
       {events.length === 0 ? (
-        <p>No events yet. Create your first event!</p>
+        <Card>
+          <Card.Content className="text-center py-12">
+            <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <h3 className="text-lg font-medium text-gray-900 mb-1">No events yet</h3>
+            <p className="text-gray-600 mb-4">Create your first event to get started</p>
+            <Button onClick={() => setShowFormModal(true)}>
+              Create Your First Event
+            </Button>
+          </Card.Content>
+        </Card>
       ) : (
-        <div className="event-grid">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {events.map((event) => (
-            <div key={event.id} className="card">
-              <h3>{event.title}</h3>
-              <p>{event.city}</p>
-              <p>{new Date(event.startAt).toLocaleDateString()}</p>
-              <p>Capacity: {event.capacity}</p>
-              <p>Status: {event.status}</p>
-              <div className="actions">
-                <button onClick={() => handleEdit(event)} className="secondary">
+            <Card key={event.id} hover>
+              <Card.Content className="space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {event.title}
+                  </h3>
+                  <Badge variant={event.status}>
+                    {event.status}
+                  </Badge>
+                </div>
+
+                <div className="space-y-2 text-sm text-gray-600">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>{event.city || 'Location TBD'}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span>{formatDateForDisplay(event.startAt)}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <span>{event.availableSpots}/{event.capacity} spots available</span>
+                  </div>
+                </div>
+              </Card.Content>
+
+              <Card.Footer className="flex gap-2">
+                <Button 
+                  variant="secondary" 
+                  size="sm"
+                  onClick={() => handleEdit(event)}
+                  disabled={actionLoading}
+                  className="flex-1"
+                >
                   Edit
-                </button>
-                <button onClick={() => handleDelete(event.id)} className="danger">
+                </Button>
+                <Button 
+                  variant="danger" 
+                  size="sm"
+                  onClick={() => setDeleteModalEvent(event)}
+                  disabled={actionLoading}
+                  className="flex-1"
+                >
                   Delete
-                </button>
-              </div>
-            </div>
+                </Button>
+              </Card.Footer>
+            </Card>
           ))}
         </div>
       )}
+
+      <Modal
+        isOpen={showFormModal}
+        onClose={resetForm}
+        title={editingEvent ? 'Edit Event' : 'Create New Event'}
+        footer={
+          <>
+            <Button variant="ghost" onClick={resetForm} disabled={actionLoading}>
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              form="event-form"
+              loading={actionLoading}
+              disabled={actionLoading}
+            >
+              {editingEvent ? 'Update Event' : 'Create Event'}
+            </Button>
+          </>
+        }
+      >
+        <form id="event-form" onSubmit={handleSubmit} className="space-y-4">
+          <Input
+            label="Title"
+            type="text"
+            value={formData.title}
+            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            required
+            disabled={actionLoading}
+            placeholder="Event title"
+          />
+
+          <Textarea
+            label="Description"
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            disabled={actionLoading}
+            placeholder="Event description (optional)"
+            rows={3}
+          />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input
+              label="Start Date & Time"
+              type="datetime-local"
+              value={formData.startAt}
+              onChange={(e) => setFormData({ ...formData, startAt: e.target.value })}
+              required
+              disabled={actionLoading}
+            />
+
+            <Input
+              label="End Date & Time"
+              type="datetime-local"
+              value={formData.endAt}
+              onChange={(e) => setFormData({ ...formData, endAt: e.target.value })}
+              required
+              disabled={actionLoading}
+            />
+          </div>
+
+          <Input
+            label="Address"
+            type="text"
+            value={formData.address}
+            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+            required
+            disabled={actionLoading}
+            placeholder="Event address"
+          />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input
+              label="City"
+              type="text"
+              value={formData.city}
+              onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+              disabled={actionLoading}
+              placeholder="City (optional)"
+            />
+
+            <Input
+              label="Capacity"
+              type="number"
+              value={formData.capacity}
+              onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
+              required
+              min="1"
+              disabled={actionLoading}
+              placeholder="Maximum attendees"
+            />
+          </div>
+        </form>
+      </Modal>
+
+      <Modal
+        isOpen={!!deleteModalEvent}
+        onClose={() => setDeleteModalEvent(null)}
+        title="Delete Event"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setDeleteModalEvent(null)} disabled={actionLoading}>
+              Cancel
+            </Button>
+            <Button 
+              variant="danger" 
+              onClick={handleDeleteConfirm}
+              loading={actionLoading}
+              disabled={actionLoading}
+            >
+              Delete Event
+            </Button>
+          </>
+        }
+      >
+        <p className="text-gray-600">
+          Are you sure you want to delete <strong>{deleteModalEvent?.title}</strong>? This action cannot be undone.
+        </p>
+      </Modal>
     </div>
   );
 }
