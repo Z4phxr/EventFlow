@@ -2,7 +2,7 @@ package com.eventflow.eventservice.registration;
 
 import com.eventflow.eventservice.registration.RegistrationResponse;
 import com.eventflow.eventservice.registration.RegistrationService;
-// User entity not in event-service - handled via JWT
+import com.eventflow.eventservice.security.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;

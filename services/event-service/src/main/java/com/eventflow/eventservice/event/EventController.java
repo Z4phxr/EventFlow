@@ -7,7 +7,7 @@ import com.eventflow.eventservice.event.EventStatus;
 import com.eventflow.eventservice.event.EventService;
 import com.eventflow.eventservice.integration.WeatherResponse;
 import com.eventflow.eventservice.integration.WeatherService;
-// User entity not in event-service - handled via JWT
+import com.eventflow.eventservice.security.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;

@@ -13,7 +13,7 @@ import com.eventflow.eventservice.event.EventStatus;
 import com.eventflow.eventservice.event.EventRepository;
 import com.eventflow.eventservice.integration.GeocodingService;
 import com.eventflow.eventservice.registration.RegistrationRepository;
-// User entity not in event-service - handled via JWT
+import com.eventflow.eventservice.security.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -95,7 +95,7 @@ public class EventService {
 
         // Check permissions
         if (!event.getOrganizerId().equals(currentUser.getId()) && 
-            !currentUser.getRole().name().equals("ADMIN")) {
+            !"ADMIN".equals(currentUser.getRole())) {
             throw new AccessDeniedException("You don't have permission to update this event");
         }
 
@@ -144,7 +144,7 @@ public class EventService {
 
         // Check permissions
         if (!event.getOrganizerId().equals(currentUser.getId()) && 
-            !currentUser.getRole().name().equals("ADMIN")) {
+            !"ADMIN".equals(currentUser.getRole())) {
             throw new AccessDeniedException("You don't have permission to delete this event");
         }
 

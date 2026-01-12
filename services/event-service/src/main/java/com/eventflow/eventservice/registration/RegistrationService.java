@@ -11,7 +11,7 @@ import com.eventflow.eventservice.registration.RegistrationResponse;
 import com.eventflow.eventservice.registration.Registration;
 import com.eventflow.eventservice.registration.RegistrationStatus;
 import com.eventflow.eventservice.registration.RegistrationRepository;
-// User entity not in event-service - handled via JWT
+import com.eventflow.eventservice.security.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -93,7 +93,7 @@ public class RegistrationService {
 
         // Check permissions
         if (!event.getOrganizerId().equals(currentUser.getId()) && 
-            !currentUser.getRole().name().equals("ADMIN")) {
+            !"ADMIN".equals(currentUser.getRole())) {
             throw new AccessDeniedException("You don't have permission to view registrations");
         }
 

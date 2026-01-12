@@ -5,6 +5,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
@@ -13,6 +14,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @Component
+@Primary
 @RequiredArgsConstructor
 @Slf4j
 public class RabbitMQDomainEventPublisher implements DomainEventPublisher {
