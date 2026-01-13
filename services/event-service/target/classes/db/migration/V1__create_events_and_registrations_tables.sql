@@ -1,0 +1,37 @@
+-- Create events table
+CREATE TABLE events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title VARCHAR(200) NOT NULL,
+    description TEXT,
+    start_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    end_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    address VARCHAR(500) NOT NULL,
+    city VARCHAR(100),
+    latitude DOUBLE PRECISION,
+    longitude DOUBLE PRECISION,
+    capacity INTEGER NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'PLANNED',
+    organizer_id UUID NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_events_organizer ON events(organizer_id);
+CREATE INDEX idx_events_status ON events(status);
+CREATE INDEX idx_events_city ON events(city);
+CREATE INDEX idx_events_start_at ON events(start_at);
+
+-- Create registrations table
+CREATE TABLE registrations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    event_id UUID NOT NULL,
+    user_id UUID NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'REGISTERED',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_registrations_event FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+    CONSTRAINT uk_registrations_event_user UNIQUE (event_id, user_id)
+);
+
+CREATE INDEX idx_registrations_event ON registrations(event_id);
+CREATE INDEX idx_registrations_user ON registrations(user_id);
+CREATE INDEX idx_registrations_status ON registrations(status);

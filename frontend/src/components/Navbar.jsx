@@ -1,6 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import Button from './Button';
 import Badge from './Badge';
 
 function Navbar() {
@@ -10,85 +9,103 @@ function Navbar() {
   const isActive = (path) => location.pathname === path;
 
   const navLinkClass = (path) => `
-    px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200
+    px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ease-out
     ${isActive(path) 
-      ? 'text-white bg-white/10' 
-      : 'text-white/80 hover:text-white hover:bg-white/5'
+      ? 'bg-white text-sky-600 shadow-lg shadow-sky-900/20 scale-105' 
+      : 'bg-white/20 text-white hover:bg-white/30 hover:scale-105 hover:shadow-md'
     }
   `;
 
+  const buttonClass = `
+    px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ease-out
+    bg-white/20 border-2 border-white/40 text-white
+    hover:bg-white hover:text-sky-600 hover:border-white hover:shadow-lg hover:shadow-white/20 hover:scale-105
+    active:scale-95
+  `;
+
+  const primaryButtonClass = `
+    px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ease-out
+    bg-white text-sky-600 border-2 border-white shadow-lg shadow-sky-900/30
+    hover:bg-sky-50 hover:shadow-xl hover:shadow-sky-900/40 hover:scale-105
+    active:scale-95
+  `;
+
   return (
-    <nav className="sticky top-0 z-40 bg-gradient-to-r from-primary-700 to-primary-600 shadow-soft-lg border-b border-primary-800/20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Brand */}
-          <div className="flex items-center">
-            <Link to="/" className="flex items-center gap-2 group">
-              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform">
-                <span className="text-primary-600 font-bold text-lg">E</span>
-              </div>
-              <span className="text-xl font-bold text-white">EventFlow</span>
-            </Link>
-          </div>
+    <nav className="sticky top-0 z-50 bg-gradient-to-r from-sky-500 via-sky-400 to-cyan-400 shadow-xl shadow-sky-500/20 backdrop-blur-sm">
+      <div className="w-full px-8 lg:px-12">
+        <div className="flex items-center justify-between h-18 py-3">
+          
+          {/* Left Side - Logo and Brand */}
+          <Link to="/" className="flex items-center gap-3 group mr-20">
+            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg shadow-sky-600/30 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+              <span className="text-sky-500 font-bold text-xl">E</span>
+            </div>
+            <span className="text-2xl font-bold text-white tracking-tight drop-shadow-sm">
+              EventFlow
+            </span>
+          </Link>
 
-          {/* Navigation Links */}
-          <div className="flex items-center gap-2">
-            <Link to="/" className={navLinkClass('/')}>
-              Events
-            </Link>
-            
-            {user && (
-              <>
-                {(user.role === 'ORGANIZER' || user.role === 'ADMIN') && (
-                  <Link to="/organizer" className={navLinkClass('/organizer')}>
-                    My Dashboard
+          {/* Right Side - Navigation + Buttons + User */}
+          <div className="flex items-center gap-6">
+            {/* Navigation Links */}
+            <div className="hidden md:flex items-center gap-4">
+              <Link to="/" className={navLinkClass('/')}>
+                Events
+              </Link>
+              
+              {user && (
+                <>
+                  {(user.role === 'ORGANIZER' || user.role === 'ADMIN') && (
+                    <Link to="/organizer" className={navLinkClass('/organizer')}>
+                      Dashboard
+                    </Link>
+                  )}
+                  <Link to="/notifications" className={navLinkClass('/notifications')}>
+                    Notifications
                   </Link>
-                )}
-                <Link to="/notifications" className={navLinkClass('/notifications')}>
-                  Notifications
-                </Link>
-                <Link to="/demo" className={navLinkClass('/demo')}>
-                  Demo
-                </Link>
-              </>
-            )}
-          </div>
+                  <Link to="/demo" className={navLinkClass('/demo')}>
+                    Demo
+                  </Link>
+                </>
+              )}
+            </div>
 
-          {/* User Section */}
-          <div className="flex items-center gap-3">
-            {user ? (
-              <>
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-white/10 rounded-lg">
-                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-                    <span className="text-primary-600 font-semibold text-sm">
-                      {user.username.charAt(0).toUpperCase()}
-                    </span>
+            {/* Auth Buttons / Logout */}
+            <div className="flex items-center gap-4">
+              {user ? (
+                <>
+                  <button onClick={logout} className={buttonClass}>
+                    Logout
+                  </button>
+                  <div className="flex items-center gap-3 px-4 py-2 bg-white/15 backdrop-blur-sm rounded-2xl border border-white/20">
+                    <div className="w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-md">
+                      <span className="text-sky-500 font-bold text-sm">
+                        {user.username.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-white text-sm font-semibold">{user.username}</span>
+                      <Badge variant={user.role === 'ORGANIZER' ? 'warning' : 'info'} className="text-xs">
+                        {user.role}
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="flex flex-col">
-                    <span className="text-white text-sm font-medium">{user.username}</span>
-                    <Badge variant={user.role === 'ORGANIZER' ? 'warning' : 'info'} className="text-xs">
-                      {user.role}
-                    </Badge>
-                  </div>
-                </div>
-                <Button onClick={logout} variant="ghost" size="sm" className="text-white hover:bg-white/10">
-                  Logout
-                </Button>
-              </>
-            ) : (
-              <>
-                <Link to="/login">
-                  <Button variant="ghost" size="sm" className="text-white hover:bg-white/10">
-                    Login
-                  </Button>
-                </Link>
-                <Link to="/register">
-                  <Button variant="primary" size="sm" className="bg-white text-primary-600 hover:bg-gray-100">
-                    Register
-                  </Button>
-                </Link>
-              </>
-            )}
+                </>
+              ) : (
+                <>
+                  <Link to="/login">
+                    <button className={buttonClass}>
+                      Login
+                    </button>
+                  </Link>
+                  <Link to="/register">
+                    <button className={primaryButtonClass}>
+                      Get Started
+                    </button>
+                  </Link>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>

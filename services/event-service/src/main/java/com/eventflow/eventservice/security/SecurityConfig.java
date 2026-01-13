@@ -35,9 +35,9 @@ public class SecurityConfig {
                 .cors(AbstractHttpConfigurer::disable)  // Disabled - API Gateway handles CORS
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/events", "/api/events/**").permitAll()
-                        .requestMatchers("/api/events/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
