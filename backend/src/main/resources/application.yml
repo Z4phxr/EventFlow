@@ -30,7 +30,7 @@ spring:
 # SECURITY WARNING: Default values below are for DEVELOPMENT ONLY
 # ALWAYS set JWT_SECRET and ENCRYPTION_KEY via environment variables in production
 jwt:
-  secret: ${JWT_SECRET:jwtSecretKey1234567890123456789012345678901234567890==}
+  secret: ${JWT_SECRET:/FwWN1qHVo67x24sT4ylNJZ3i+9/IkF08aXL9JtqLTY=}
   expiration: 86400000 # 24 hours
 
 # Encryption Configuration
