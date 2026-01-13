@@ -16,16 +16,17 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
     
     List<Event> findByOrganizerId(UUID organizerId);
     
-    @Query("SELECT e FROM Event e WHERE " +
-           "(:dateFrom IS NULL OR e.startAt >= :dateFrom) AND " +
-           "(:dateTo IS NULL OR e.endAt <= :dateTo) AND " +
-           "(:city IS NULL OR LOWER(e.city) LIKE LOWER(CONCAT('%', :city, '%'))) AND " +
-           "(:status IS NULL OR e.status = :status)")
+    @Query(value = "SELECT * FROM events e WHERE " +
+           "(?1 IS NULL OR e.start_at >= CAST(?1 AS TIMESTAMP WITH TIME ZONE)) AND " +
+           "(?2 IS NULL OR e.end_at <= CAST(?2 AS TIMESTAMP WITH TIME ZONE)) AND " +
+           "(?3 IS NULL OR e.city ILIKE CONCAT('%', ?3, '%')) AND " +
+           "(?4 IS NULL OR e.status = ?4)", 
+           nativeQuery = true)
     List<Event> findByFilters(
-        @Param("dateFrom") ZonedDateTime dateFrom,
-        @Param("dateTo") ZonedDateTime dateTo,
-        @Param("city") String city,
-        @Param("status") EventStatus status
+        ZonedDateTime dateFrom,
+        ZonedDateTime dateTo,
+        String city,
+        String status
     );
 }
 

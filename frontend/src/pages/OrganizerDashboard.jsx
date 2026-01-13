@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { eventsAPI } from '../api';
+import { eventsAPI, registrationsAPI } from '../api';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import Input from '../components/Input';
@@ -26,6 +26,12 @@ function OrganizerDashboard() {
   });
   const [message, setMessage] = useState({ text: '', type: '' });
   const [actionLoading, setActionLoading] = useState(false);
+  
+  // Registrations state
+  const [registrationsCache, setRegistrationsCache] = useState({});
+  const [expandedEventId, setExpandedEventId] = useState(null);
+  const [registrationsLoading, setRegistrationsLoading] = useState(false);
+  const [registrationsError, setRegistrationsError] = useState('');
 
   useEffect(() => {
     fetchMyEvents();
@@ -135,6 +141,65 @@ function OrganizerDashboard() {
     setShowFormModal(false);
   };
 
+  const toggleRegistrations = async (eventId) => {
+    // If clicking the same event, close it
+    if (expandedEventId === eventId) {
+      setExpandedEventId(null);
+      setRegistrationsError('');
+      return;
+    }
+
+    setExpandedEventId(eventId);
+    setRegistrationsError('');
+
+    // Check cache first
+    if (registrationsCache[eventId]) {
+      return;
+    }
+
+    // Fetch registrations
+    setRegistrationsLoading(true);
+    try {
+      const response = await registrationsAPI.getEventRegistrations(eventId);
+      setRegistrationsCache(prev => ({
+        ...prev,
+        [eventId]: response.data
+      }));
+    } catch (err) {
+      console.error('Failed to fetch registrations:', err);
+      setRegistrationsError(err.response?.data?.message || 'Failed to load registrations');
+    } finally {
+      setRegistrationsLoading(false);
+    }
+  };
+
+  const refreshRegistrations = async (eventId) => {
+    setRegistrationsLoading(true);
+    setRegistrationsError('');
+    try {
+      const response = await registrationsAPI.getEventRegistrations(eventId);
+      setRegistrationsCache(prev => ({
+        ...prev,
+        [eventId]: response.data
+      }));
+    } catch (err) {
+      console.error('Failed to refresh registrations:', err);
+      setRegistrationsError(err.response?.data?.message || 'Failed to refresh registrations');
+    } finally {
+      setRegistrationsLoading(false);
+    }
+  };
+
+  const formatRegistrationDate = (dateString) => {
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(new Date(dateString));
+  };
+
   if (loading) {
     return <Spinner.Container>Loading your events...</Spinner.Container>;
   }
@@ -178,16 +243,26 @@ function OrganizerDashboard() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {events.map((event) => (
+          {events.map((event) => {
+            const isGeocoded = event.latitude != null && event.longitude != null;
+            const isExpanded = expandedEventId === event.id;
+            const registrations = registrationsCache[event.id] || [];
+            
+            return (
             <Card key={event.id} hover>
               <Card.Content className="space-y-3">
                 <div className="flex items-start justify-between gap-2">
                   <h3 className="text-lg font-semibold text-gray-900">
                     {event.title}
                   </h3>
-                  <Badge variant={event.status}>
-                    {event.status}
-                  </Badge>
+                  <div className="flex gap-1 flex-wrap justify-end">
+                    <Badge variant={event.status}>
+                      {event.status}
+                    </Badge>
+                    <Badge variant={isGeocoded ? 'geocoded' : 'not-geocoded'}>
+                      {isGeocoded ? 'Geocoded' : 'Not geocoded'}
+                    </Badge>
+                  </div>
                 </div>
 
                 <div className="space-y-2 text-sm text-gray-600">
@@ -213,6 +288,88 @@ function OrganizerDashboard() {
                     <span>{event.availableSpots}/{event.capacity} spots available</span>
                   </div>
                 </div>
+
+                {/* Registrations Panel */}
+                <div className="pt-2 border-t border-gray-100">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleRegistrations(event.id);
+                    }}
+                    className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1"
+                  >
+                    <svg 
+                      className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                    {isExpanded ? 'Hide Registrations' : 'View Registrations'}
+                  </button>
+
+                  {isExpanded && (
+                    <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                      {registrationsLoading && expandedEventId === event.id ? (
+                        <p className="text-sm text-gray-500">Loading registrations...</p>
+                      ) : registrationsError && expandedEventId === event.id ? (
+                        <div className="text-sm">
+                          <p className="text-red-600 mb-2">{registrationsError}</p>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              refreshRegistrations(event.id);
+                            }}
+                            className="text-primary-600 hover:underline"
+                          >
+                            Try again
+                          </button>
+                        </div>
+                      ) : registrations.length === 0 ? (
+                        <p className="text-sm text-gray-500">No registrations yet</p>
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium text-gray-700">
+                              {registrations.length} attendee{registrations.length !== 1 ? 's' : ''}
+                            </span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                refreshRegistrations(event.id);
+                              }}
+                              className="text-xs text-primary-600 hover:underline"
+                              disabled={registrationsLoading}
+                            >
+                              Refresh
+                            </button>
+                          </div>
+                          <div className="max-h-40 overflow-y-auto space-y-1">
+                            {registrations.map((reg) => (
+                              <div 
+                                key={reg.id} 
+                                className="flex items-center justify-between py-1 px-2 bg-white rounded text-sm border border-gray-100"
+                              >
+                                <span className="text-gray-700 font-mono text-xs truncate" title={reg.userId}>
+                                  User: {reg.userId.substring(0, 8)}...
+                                </span>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant={reg.status} className="text-xs">
+                                    {reg.status}
+                                  </Badge>
+                                  <span className="text-gray-400 text-xs">
+                                    {formatRegistrationDate(reg.createdAt)}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </Card.Content>
 
               <Card.Footer className="flex gap-2">
@@ -236,7 +393,7 @@ function OrganizerDashboard() {
                 </Button>
               </Card.Footer>
             </Card>
-          ))}
+          )})}
         </div>
       )}
 

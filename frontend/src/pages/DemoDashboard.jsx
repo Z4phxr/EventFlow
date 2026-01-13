@@ -73,21 +73,52 @@ function DemoDashboard() {
       const startAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
       const endAt = new Date(startAt.getTime() + 4 * 60 * 60 * 1000); // 4 hours later
 
+      // Use a well-known, geocodable address for reliable geocoding
       const demoEvent = {
         title: `Demo Event - ${now.toISOString().slice(0, 19)}`,
         description: 'This is a demo event to test microservices architecture and RabbitMQ async communication',
         startAt: startAt.toISOString(),
         endAt: endAt.toISOString(),
-        address: '123 Demo Street',
+        address: 'Plac Defilad 1, 00-901 Warsaw, Poland',
         city: 'Warsaw',
         capacity: 50
       };
 
       const response = await eventsAPI.create(demoEvent);
-      setDemoEventId(response.data.id);
+      const createdEventId = response.data.id;
+      setDemoEventId(createdEventId);
 
+      // Check if geocoding succeeded
+      let eventData = response.data;
+      const isGeocoded = eventData.latitude != null && eventData.longitude != null;
+
+      if (!isGeocoded) {
+        // Retry: refetch after a short delay to allow backend geocoding
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        try {
+          const refetchResponse = await eventsAPI.getById(createdEventId);
+          eventData = refetchResponse.data;
+          
+          // If still not geocoded, try updating with simplified address
+          if (eventData.latitude == null || eventData.longitude == null) {
+            const updatePayload = {
+              ...eventData,
+              address: 'Palace of Culture and Science, Warsaw, Poland'
+            };
+            await eventsAPI.update(createdEventId, updatePayload);
+            // Refetch again after update
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            const finalResponse = await eventsAPI.getById(createdEventId);
+            eventData = finalResponse.data;
+          }
+        } catch (retryErr) {
+          console.log('Geocoding retry failed:', retryErr);
+        }
+      }
+
+      const finalGeocoded = eventData.latitude != null && eventData.longitude != null;
       setMessage({
-        text: `Demo event created! Event ID: ${response.data.id}. Expected message published to RabbitMQ: event.created`,
+        text: `Demo event created! Event ID: ${createdEventId}. ${finalGeocoded ? 'Location geocoded successfully.' : 'Geocoding pending.'} Expected message published to RabbitMQ: event.created`,
         type: 'success'
       });
     } catch (err) {

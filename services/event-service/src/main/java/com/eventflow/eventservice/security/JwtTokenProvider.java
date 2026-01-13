@@ -2,14 +2,13 @@ package com.eventflow.eventservice.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
-import java.security.Key;
+import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,29 +38,12 @@ public class JwtTokenProvider {
 
     private Claims extractAllClaims(String token) {
         try {
-            // Try modern API: Jwts.parserBuilder().setSigningKey(...).build().parseClaimsJws(token)
-            try {
-                java.lang.reflect.Method parserBuilder = Jwts.class.getMethod("parserBuilder");
-                Object builder = parserBuilder.invoke(null);
-                java.lang.reflect.Method setSigningKey = builder.getClass().getMethod("setSigningKey", Key.class);
-                Object builderWithKey = setSigningKey.invoke(builder, getSignKey());
-                java.lang.reflect.Method build = builderWithKey.getClass().getMethod("build");
-                Object parser = build.invoke(builderWithKey);
-                java.lang.reflect.Method parse = parser.getClass().getMethod("parseClaimsJws", String.class);
-                Object jws = parse.invoke(parser, token);
-                java.lang.reflect.Method getBody = jws.getClass().getMethod("getBody");
-                return (Claims) getBody.invoke(jws);
-            } catch (NoSuchMethodException e) {
-                // Fallback to older API: Jwts.parser().setSigningKey(...).parseClaimsJws(token)
-                java.lang.reflect.Method parser = Jwts.class.getMethod("parser");
-                Object parserObj = parser.invoke(null);
-                java.lang.reflect.Method setSigningKey = parserObj.getClass().getMethod("setSigningKey", Key.class);
-                Object parserWithKey = setSigningKey.invoke(parserObj, getSignKey());
-                java.lang.reflect.Method parse = parserWithKey.getClass().getMethod("parseClaimsJws", String.class);
-                Object jws = parse.invoke(parserWithKey, token);
-                java.lang.reflect.Method getBody = jws.getClass().getMethod("getBody");
-                return (Claims) getBody.invoke(jws);
-            }
+            // jjwt 0.12.x API: Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload()
+            return Jwts.parser()
+                    .verifyWith(Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret)))
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
         } catch (Exception ex) {
             throw new RuntimeException("Failed to parse JWT", ex);
         }
@@ -84,15 +66,15 @@ public class JwtTokenProvider {
 
     private String createToken(Map<String, Object> claims, String username) {
         return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(username)
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(getSignKey(), SignatureAlgorithm.HS256)
+                .claims(claims)
+                .subject(username)
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + expiration))
+                .signWith(getSignKey())
                 .compact();
     }
 
-    private Key getSignKey() {
+    private SecretKey getSignKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secret);
         return Keys.hmacShaKeyFor(keyBytes);
     }

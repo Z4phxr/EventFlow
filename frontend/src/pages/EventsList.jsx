@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { eventsAPI } from '../api';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
+import Button from '../components/Button';
 import Input from '../components/Input';
 import Select from '../components/Select';
 import Spinner from '../components/Spinner';
@@ -12,23 +13,33 @@ function EventsList() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [filters, setFilters] = useState({
+  
+  // Draft filters (what user is typing)
+  const [draftFilters, setDraftFilters] = useState({
     city: '',
     status: ''
   });
+  
+  // Applied filters (used for actual fetching)
+  const [appliedFilters, setAppliedFilters] = useState({
+    city: '',
+    status: ''
+  });
+  
   const navigate = useNavigate();
 
+  // Only fetch when appliedFilters change (not on every keystroke)
   useEffect(() => {
     fetchEvents();
-  }, [filters]);
+  }, [appliedFilters]);
 
   const fetchEvents = async () => {
     try {
       setLoading(true);
       setError('');
       const params = {};
-      if (filters.city) params.city = filters.city;
-      if (filters.status) params.status = filters.status;
+      if (appliedFilters.city) params.city = appliedFilters.city;
+      if (appliedFilters.status) params.status = appliedFilters.status;
       
       const response = await eventsAPI.getAll(params);
       setEvents(response.data);
@@ -37,6 +48,24 @@ function EventsList() {
       setError('Failed to load events. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSearch = () => {
+    setAppliedFilters({
+      city: draftFilters.city.trim(),
+      status: draftFilters.status
+    });
+  };
+
+  const handleClear = () => {
+    setDraftFilters({ city: '', status: '' });
+    setAppliedFilters({ city: '', status: '' });
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleSearch();
     }
   };
 
@@ -94,20 +123,37 @@ function EventsList() {
       {/* Filters */}
       <Card>
         <Card.Content>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              type="text"
-              placeholder="Filter by city..."
-              value={filters.city}
-              onChange={(e) => setFilters({ ...filters, city: e.target.value })}
-              label="City"
-            />
-            <Select
-              value={filters.status}
-              onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-              options={statusOptions}
-              label="Status"
-            />
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                type="text"
+                placeholder="Filter by city..."
+                value={draftFilters.city}
+                onChange={(e) => setDraftFilters({ ...draftFilters, city: e.target.value })}
+                onKeyDown={handleKeyDown}
+                label="City"
+              />
+              <Select
+                value={draftFilters.status}
+                onChange={(e) => setDraftFilters({ ...draftFilters, status: e.target.value })}
+                options={statusOptions}
+                label="Status"
+              />
+            </div>
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={handleSearch}
+                className="px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ease-out bg-sky-500 text-white shadow-lg shadow-sky-500/30 hover:bg-sky-600 hover:shadow-xl hover:scale-105 active:scale-95"
+              >
+                Search
+              </button>
+              <button
+                onClick={handleClear}
+                className="px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ease-out bg-gray-100 text-gray-700 border-2 border-gray-200 hover:bg-gray-200 hover:scale-105 active:scale-95"
+              >
+                Clear
+              </button>
+            </div>
           </div>
         </Card.Content>
       </Card>
@@ -138,9 +184,14 @@ function EventsList() {
                   <h3 className="text-lg font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">
                     {event.title}
                   </h3>
-                  <Badge variant={event.status}>
-                    {event.status}
-                  </Badge>
+                  <div className="flex gap-1 flex-wrap justify-end">
+                    <Badge variant={event.status}>
+                      {event.status}
+                    </Badge>
+                    <Badge variant={event.latitude && event.longitude ? 'geocoded' : 'not-geocoded'}>
+                      {event.latitude && event.longitude ? 'Geocoded' : 'Not geocoded'}
+                    </Badge>
+                  </div>
                 </div>
                 
                 {/* Location */}

@@ -67,7 +67,15 @@ public class EventService {
 
     @Transactional(readOnly = true)
     public List<EventResponse> getEvents(ZonedDateTime dateFrom, ZonedDateTime dateTo, String city, EventStatus status) {
-        return eventRepository.findByFilters(dateFrom, dateTo, city, status)
+        // If no filters provided, just return all events
+        if (dateFrom == null && dateTo == null && city == null && status == null) {
+            return eventRepository.findAll()
+                    .stream()
+                    .map(this::mapToResponse)
+                    .collect(Collectors.toList());
+        }
+        String statusStr = status != null ? status.name() : null;
+        return eventRepository.findByFilters(dateFrom, dateTo, city, statusStr)
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
