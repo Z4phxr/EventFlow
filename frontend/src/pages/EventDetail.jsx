@@ -24,6 +24,23 @@ function EventDetail() {
     fetchEventDetails();
   }, [id]);
 
+  // Check registration status when user is logged in
+  useEffect(() => {
+    if (user && id) {
+      checkRegistrationStatus();
+    }
+  }, [user, id]);
+
+  const checkRegistrationStatus = async () => {
+    try {
+      const response = await registrationsAPI.checkRegistration(id);
+      setIsRegistered(response.data);
+    } catch (err) {
+      // If 401/403, user not logged in or no access - that's fine
+      console.log('Could not check registration status:', err);
+    }
+  };
+
   const fetchEventDetails = async () => {
     try {
       setLoading(true);

@@ -44,7 +44,7 @@ public class RegistrationService {
             throw new BusinessException("Organizer cannot register as attendee to their own event");
         }
 
-        // Check if already registered
+        // Check if already actively registered
         if (registrationRepository.existsByEventIdAndUserIdAndStatus(
                 eventId, currentUser.getId(), RegistrationStatus.REGISTERED)) {
             throw new BusinessException("Already registered to this event");
@@ -56,11 +56,21 @@ public class RegistrationService {
             throw new BusinessException("Event is full");
         }
 
-        Registration registration = Registration.builder()
-                .eventId(eventId)
-                .userId(currentUser.getId())
-                .status(RegistrationStatus.REGISTERED)
-                .build();
+        // Check if there's an existing cancelled registration to reactivate
+        Registration registration = registrationRepository.findByEventIdAndUserId(eventId, currentUser.getId())
+                .orElse(null);
+        
+        if (registration != null) {
+            // Reactivate existing registration
+            registration.setStatus(RegistrationStatus.REGISTERED);
+        } else {
+            // Create new registration
+            registration = Registration.builder()
+                    .eventId(eventId)
+                    .userId(currentUser.getId())
+                    .status(RegistrationStatus.REGISTERED)
+                    .build();
+        }
 
         registration = registrationRepository.save(registration);
 
@@ -101,6 +111,12 @@ public class RegistrationService {
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isUserRegistered(UUID eventId, UUID userId) {
+        return registrationRepository.existsByEventIdAndUserIdAndStatus(
+                eventId, userId, RegistrationStatus.REGISTERED);
     }
 
     private RegistrationResponse mapToResponse(Registration registration) {

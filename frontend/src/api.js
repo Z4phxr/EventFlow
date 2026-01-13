@@ -58,6 +58,7 @@ export const eventsAPI = {
 export const registrationsAPI = {
   register: (eventId) => api.post(`/events/${eventId}/registrations`),
   unregister: (eventId) => api.delete(`/events/${eventId}/registrations/me`),
+  checkRegistration: (eventId) => api.get(`/events/${eventId}/registrations/me`),
   getEventRegistrations: (eventId) => api.get(`/events/${eventId}/registrations`)
 };
 

@@ -1,10 +1,16 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import Badge from './Badge';
 
 function Navbar() {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/', { replace: true });
+  };
 
   const isActive = (path) => location.pathname === path;
 
@@ -74,7 +80,7 @@ function Navbar() {
             <div className="flex items-center gap-4">
               {user ? (
                 <>
-                  <button onClick={logout} className={buttonClass}>
+                  <button onClick={handleLogout} className={buttonClass}>
                     Logout
                   </button>
                   <div className="flex items-center gap-3 px-4 py-2 bg-white/15 backdrop-blur-sm rounded-2xl border border-white/20">
