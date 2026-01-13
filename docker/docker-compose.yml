@@ -10,15 +10,14 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
     networks:
       - eventflow-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    env_file:
-      - ../docker/.env
+      test: ["CMD-SHELL", "pg_isready -U eventflow -d eventflow"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   backend:
     build:
@@ -30,16 +29,21 @@ services:
       SPRING_DATASOURCE_USERNAME: eventflow
       SPRING_DATASOURCE_PASSWORD: eventflow123
       SPRING_PROFILES_ACTIVE: prod
-      JWT_SECRET: ${JWT_SECRET:-}
-      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-MySecretKey12345}
+      JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      ENCRYPTION_KEY: MySecretKey12345
     ports:
       - "8080:8080"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     networks:
       - eventflow-network
-    env_file:
-      - ../docker/.env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/events"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
 
   frontend:
     build:
@@ -48,23 +52,12 @@ services:
     container_name: eventflow-frontend
     ports:
       - "5173:80"
+    depends_on:
+      backend:
+        condition: service_healthy
     networks:
       - eventflow-network
 
-
-  # RabbitMQ - Optional for grade 5.0 upgrade
-  # Uncomment when implementing event-driven architecture
-  # rabbitmq:
-  #   image: rabbitmq:3-management-alpine
-  #   container_name: eventflow-rabbitmq
-  #   environment:
-  #     RABBITMQ_DEFAULT_USER: eventflow
-  #     RABBITMQ_DEFAULT_PASS: eventflow123
-  #   ports:
-  #     - "5672:5672"   # AMQP port
-  #     - "15672:15672" # Management UI
-  #   networks:
-  #     - eventflow-network
 
 volumes:
   postgres_data:

@@ -211,12 +211,15 @@ function OrganizerDashboard() {
           <h1 className="text-3xl font-bold text-gray-900">My Dashboard</h1>
           <p className="text-gray-600 mt-1">Manage your events</p>
         </div>
-        <Button onClick={() => {
-          resetForm();
-          setShowFormModal(true);
-        }}>
+        <button 
+          onClick={() => {
+            resetForm();
+            setShowFormModal(true);
+          }}
+          className="px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ease-out bg-gradient-to-r from-sky-500 to-cyan-400 text-white shadow-lg shadow-sky-500/30 hover:shadow-xl hover:shadow-sky-500/40 hover:scale-105 active:scale-95"
+        >
           Create Event
-        </Button>
+        </button>
       </div>
 
       {message.text && (
@@ -236,9 +239,12 @@ function OrganizerDashboard() {
             </svg>
             <h3 className="text-lg font-medium text-gray-900 mb-1">No events yet</h3>
             <p className="text-gray-600 mb-4">Create your first event to get started</p>
-            <Button onClick={() => setShowFormModal(true)}>
+            <button 
+              onClick={() => setShowFormModal(true)}
+              className="px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ease-out bg-gradient-to-r from-sky-500 to-cyan-400 text-white shadow-lg shadow-sky-500/30 hover:shadow-xl hover:shadow-sky-500/40 hover:scale-105 active:scale-95"
+            >
               Create Your First Event
-            </Button>
+            </button>
           </Card.Content>
         </Card>
       ) : (
@@ -290,13 +296,13 @@ function OrganizerDashboard() {
                 </div>
 
                 {/* Registrations Panel */}
-                <div className="pt-2 border-t border-gray-100">
+                <div className="pt-3 border-t border-gray-100">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       toggleRegistrations(event.id);
                     }}
-                    className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1"
+                    className="w-full px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 ease-out bg-gradient-to-r from-sky-500 to-cyan-400 text-white shadow-md shadow-sky-500/20 hover:shadow-lg hover:shadow-sky-500/30 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
                   >
                     <svg 
                       className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} 

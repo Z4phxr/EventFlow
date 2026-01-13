@@ -128,6 +128,94 @@ function EventDetail() {
     });
   };
 
+  // Get weather icon based on weather code or condition
+  const getWeatherIcon = (code, condition) => {
+    if (code !== undefined && code !== null) {
+      if (code === 0) return '☀️';
+      if (code === 1) return '🌤️';
+      if (code === 2) return '⛅';
+      if (code === 3) return '☁️';
+      if (code >= 45 && code <= 48) return '🌫️';
+      if (code >= 51 && code <= 57) return '🌦️';
+      if (code >= 61 && code <= 67) return '🌧️';
+      if (code >= 71 && code <= 77) return '❄️';
+      if (code >= 80 && code <= 82) return '🌧️';
+      if (code >= 85 && code <= 86) return '🌨️';
+      if (code >= 95) return '⛈️';
+    }
+    // Fallback to condition text
+    const cond = (condition || '').toLowerCase();
+    if (cond.includes('clear') || cond.includes('sunny')) return '☀️';
+    if (cond.includes('partly')) return '⛅';
+    if (cond.includes('cloud') || cond.includes('overcast')) return '☁️';
+    if (cond.includes('rain') || cond.includes('drizzle')) return '🌧️';
+    if (cond.includes('snow')) return '❄️';
+    if (cond.includes('thunder') || cond.includes('storm')) return '⛈️';
+    if (cond.includes('fog')) return '🌫️';
+    return '🌡️';
+  };
+
+  // Get weather advisory based on conditions
+  const getWeatherAdvisory = (weather) => {
+    if (!weather) return null;
+    
+    const code = weather.weatherCode;
+    const rainChance = weather.humidity || 0;
+    const windSpeed = weather.windSpeed || 0;
+    
+    // Thunderstorm warning
+    if (code >= 95) {
+      return {
+        icon: '⚠️',
+        message: 'Thunderstorm expected! Consider indoor alternatives.',
+        bgClass: 'bg-red-50 border border-red-200',
+        textClass: 'text-red-700'
+      };
+    }
+    
+    // Heavy rain warning
+    if ((code >= 61 && code <= 67) || (code >= 80 && code <= 82) || rainChance > 70) {
+      return {
+        icon: '🌧️',
+        message: 'Rain is likely. Bring an umbrella or rain gear!',
+        bgClass: 'bg-blue-50 border border-blue-200',
+        textClass: 'text-blue-700'
+      };
+    }
+    
+    // Snow warning
+    if (code >= 71 && code <= 86) {
+      return {
+        icon: '❄️',
+        message: 'Snowy conditions expected. Dress warmly!',
+        bgClass: 'bg-indigo-50 border border-indigo-200',
+        textClass: 'text-indigo-700'
+      };
+    }
+    
+    // High wind warning
+    if (windSpeed > 40) {
+      return {
+        icon: '💨',
+        message: 'Strong winds expected. Secure loose items.',
+        bgClass: 'bg-amber-50 border border-amber-200',
+        textClass: 'text-amber-700'
+      };
+    }
+    
+    // Perfect weather
+    if (code <= 1 && rainChance < 20) {
+      return {
+        icon: '✨',
+        message: 'Great weather expected! Perfect for the event.',
+        bgClass: 'bg-green-50 border border-green-200',
+        textClass: 'text-green-700'
+      };
+    }
+    
+    return null;
+  };
+
   // Build OpenStreetMap embed URL
   const getMapEmbedUrl = (lat, lon) => {
     const zoom = 15;
@@ -324,35 +412,75 @@ function EventDetail() {
                 </div>
               ) : weather ? (
                 <div className="space-y-4">
-                  {/* Weather Summary */}
-                  <div className="flex items-center gap-4">
-                    <div className="text-4xl font-bold text-gray-900">
-                      {weather.temperature != null ? `${Math.round(weather.temperature)}` : '--'}
-                      <span className="text-2xl text-gray-500">C</span>
+                  {/* Main Weather Display */}
+                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-sky-50 to-cyan-50 rounded-xl border border-sky-100">
+                    {/* Weather Icon & Condition */}
+                    <div className="flex items-center gap-4">
+                      <div className="text-5xl">
+                        {getWeatherIcon(weather.weatherCode, weather.condition)}
+                      </div>
+                      <div>
+                        <p className="text-xl font-bold text-gray-900">{weather.condition || 'Weather data'}</p>
+                        <p className="text-sm text-gray-500">
+                          {formatShortDate(event.startAt)}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-gray-900 font-medium">{weather.condition || weather.forecast || 'Weather data available'}</p>
-                      <p className="text-sm text-gray-500">
-                        At event location on {formatShortDate(event.startAt)}
-                      </p>
+                    
+                    {/* Temperature */}
+                    <div className="text-right">
+                      <div className="text-4xl font-bold text-gray-900">
+                        {weather.temperature != null ? `${Math.round(weather.temperature)}°` : '--'}
+                      </div>
+                      {weather.temperatureMax != null && weather.temperatureMin != null && (
+                        <p className="text-sm text-gray-500">
+                          {Math.round(weather.temperatureMin)}° / {Math.round(weather.temperatureMax)}°
+                        </p>
+                      )}
                     </div>
                   </div>
                   
-                  {/* Weather Details */}
-                  {(weather.humidity != null || weather.windSpeed != null) && (
-                    <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200">
-                      {weather.humidity != null && (
-                        <div>
-                          <span className="text-sm text-gray-500">Humidity</span>
-                          <p className="text-gray-900 font-medium">{weather.humidity}%</p>
-                        </div>
-                      )}
-                      {weather.windSpeed != null && (
-                        <div>
-                          <span className="text-sm text-gray-500">Wind Speed</span>
-                          <p className="text-gray-900 font-medium">{weather.windSpeed} km/h</p>
-                        </div>
-                      )}
+                  {/* Weather Details Grid */}
+                  <div className="grid grid-cols-3 gap-3">
+                    {/* Rain Probability */}
+                    <div className="text-center p-3 bg-blue-50 rounded-lg">
+                      <div className="text-2xl mb-1">💧</div>
+                      <p className="text-lg font-semibold text-gray-900">
+                        {weather.humidity != null ? `${weather.humidity}%` : '--'}
+                      </p>
+                      <p className="text-xs text-gray-500">Rain chance</p>
+                    </div>
+                    
+                    {/* Wind Speed */}
+                    <div className="text-center p-3 bg-cyan-50 rounded-lg">
+                      <div className="text-2xl mb-1">💨</div>
+                      <p className="text-lg font-semibold text-gray-900">
+                        {weather.windSpeed != null ? `${Math.round(weather.windSpeed)}` : '--'}
+                        <span className="text-xs text-gray-500 ml-1">km/h</span>
+                      </p>
+                      <p className="text-xs text-gray-500">Wind</p>
+                    </div>
+                    
+                    {/* Precipitation */}
+                    <div className="text-center p-3 bg-indigo-50 rounded-lg">
+                      <div className="text-2xl mb-1">🌧️</div>
+                      <p className="text-lg font-semibold text-gray-900">
+                        {weather.precipitation != null ? `${weather.precipitation}` : '--'}
+                        <span className="text-xs text-gray-500 ml-1">mm</span>
+                      </p>
+                      <p className="text-xs text-gray-500">Precipitation</p>
+                    </div>
+                  </div>
+
+                  {/* Weather Advisory */}
+                  {getWeatherAdvisory(weather) && (
+                    <div className={`p-3 rounded-lg ${getWeatherAdvisory(weather).bgClass}`}>
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{getWeatherAdvisory(weather).icon}</span>
+                        <p className={`text-sm font-medium ${getWeatherAdvisory(weather).textClass}`}>
+                          {getWeatherAdvisory(weather).message}
+                        </p>
+                      </div>
                     </div>
                   )}
                 </div>

@@ -1,208 +1,208 @@
-# EventFlow
+# EventFlow - Event Management Platform
 
-Event management system with microservices architecture, RabbitMQ event-driven communication, and React frontend. Organizers create events, attendees register, and services communicate asynchronously for notifications.
+A full-stack web application for event management with user registration, event creation, and notifications.
 
-## Architecture
+## 🚀 Quick Start (One Command)
 
-**Microservices:**
-- User Service (8081) - Authentication, user management, JWT tokens
-- Event Service (8082) - Event CRUD, RabbitMQ event publishing
-- Notification Service (8083) - RabbitMQ consumer, notification persistence
-- API Gateway (8080) - Request routing, JWT validation, unified API
+### Prerequisites
+- **Docker Desktop** installed and running
 
-**Infrastructure:**
-- RabbitMQ (5672 AMQP, 15672 Management UI) - Asynchronous messaging
-- PostgreSQL - 3 separate databases (ports 5432, 5433, 5434)
-- React Frontend (5173) - Modern UI with Tailwind CSS
+### Start the Application
 
-**Flow:**
-```
-Client → API Gateway → Service
-Event Service → RabbitMQ → Notification Service
+**Windows (PowerShell):**
+```powershell
+.\start.ps1
 ```
 
-## Technology Stack
-
-**Backend:** Java 17, Spring Boot 3, Spring Cloud Gateway, Spring Data JPA, Spring AMQP, Flyway, JWT, Jasypt
-
-**Frontend:** React 18.2, Vite, React Router v6, Axios, Tailwind CSS
-
-**Infrastructure:** PostgreSQL 15-alpine, RabbitMQ 3.13-management-alpine, Docker Compose
-
-## Quick Start
-
-### Docker Compose (Recommended)
-
-```bash
-docker compose -f docker/docker-compose-microservices.yml up -d --build
+**Or manually:**
+```powershell
+cd docker
+docker-compose up -d --build
 ```
 
-**Access:**
-- Frontend: http://localhost:5173
-- API Gateway: http://localhost:8080/api
-- User Service Swagger: http://localhost:8081/swagger-ui.html
-- Event Service Swagger: http://localhost:8082/swagger-ui.html
-- Notification Service Swagger: http://localhost:8083/swagger-ui.html
-- RabbitMQ Management: http://localhost:15672 (eventflow/eventflow123)
+Wait 1-2 minutes for all services to start, then open: **http://localhost:5173**
 
-**Stop:**
-```bash
-docker compose -f docker/docker-compose-microservices.yml down
+### Demo Accounts
+| Role | Email | Password |
+|------|-------|----------|
+| Organizer | organizer@example.com | password123 |
+| User | user@example.com | password123 |
+
+### Stop the Application
+```powershell
+cd docker
+docker-compose down
 ```
 
-### Local Development
+---
 
-Run each service in a separate terminal:
+## 📋 Features
 
-```bash
-# User Service
-cd services/user-service
-mvn spring-boot:run
+### User Management
+- ✅ User registration with email validation
+- ✅ JWT-based authentication
+- ✅ Role-based access (USER, ORGANIZER, ADMIN)
 
-# Event Service
-cd services/event-service
-mvn spring-boot:run
+### Event Management
+- ✅ Create/Edit/Delete events (Organizers)
+- ✅ Event listing with search and filters
+- ✅ Event details with map (OpenStreetMap)
+- ✅ Weather information for event location
+- ✅ Geocoding for event locations
 
-# Notification Service
-cd services/notification-service
-mvn spring-boot:run
+### Registration System
+- ✅ Register/Cancel registration for events
+- ✅ Capacity management
+- ✅ Registration status tracking
+- ✅ Organizer can view registrations
 
-# API Gateway
-cd gateway
-mvn spring-boot:run
+### Notifications
+- ✅ In-app notifications
+- ✅ Event-driven notifications
 
-# Frontend
-cd frontend
+---
+
+## 🏗️ Architecture
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│  Frontend   │────▶│   Backend   │────▶│  PostgreSQL │
+│  (React)    │     │(Spring Boot)│     │             │
+│  Port 5173  │     │  Port 8080  │     │  Port 5432  │
+└─────────────┘     └─────────────┘     └─────────────┘
+```
+
+---
+
+## 🛠️ Tech Stack
+
+### Backend
+- Java 17
+- Spring Boot 3.2.1
+- Spring Security with JWT
+- Spring Data JPA
+- PostgreSQL 15
+- Flyway (database migrations)
+
+### Frontend
+- React 18.2
+- Vite 5.4
+- Tailwind CSS
+- React Router 6
+
+### Infrastructure
+- Docker & Docker Compose
+- Nginx (production frontend)
+
+---
+
+## 📁 Project Structure
+
+```
+eventflow/
+├── backend/                 # Spring Boot application
+│   ├── src/main/java/
+│   │   └── com/eventflow/
+│   │       ├── auth/        # Authentication
+│   │       ├── events/      # Event management
+│   │       ├── users/       # User management
+│   │       ├── registrations/# Event registrations
+│   │       └── notifications/# Notification system
+│   └── src/main/resources/
+├── frontend/                # React SPA
+│   ├── src/
+│   │   ├── components/      # UI components
+│   │   ├── pages/           # Page components
+│   │   └── api.js           # API client
+│   └── package.json
+├── docker/                  # Docker configuration
+│   ├── docker-compose.yml   # Main setup
+│   ├── backend.Dockerfile
+│   └── frontend.Dockerfile
+├── start.ps1               # One-command startup
+└── README.md
+```
+
+---
+
+## 🔧 Development Setup
+
+### Run Frontend Locally (Hot Reload)
+```powershell
+# Start backend with Docker
+cd docker
+docker-compose up postgres backend -d
+
+# Run frontend with Vite dev server
+cd ../frontend
 npm install
 npm run dev
 ```
 
-**Note:** Local development requires 3 PostgreSQL databases and RabbitMQ running.
+Frontend will be at http://localhost:5173 with hot reload.
 
-## API Endpoints
+---
 
-**Authentication (via Gateway):**
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login and get JWT token
+## 🌐 API Endpoints
 
-**Events (via Gateway):**
-- `GET /api/events` - List all events
-- `POST /api/events` - Create event (ORGANIZER)
-- `GET /api/events/{id}` - Get event details
-- `PUT /api/events/{id}` - Update event (ORGANIZER)
-- `DELETE /api/events/{id}` - Delete event (ORGANIZER)
+### Authentication
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | /api/auth/register | Register new user |
+| POST | /api/auth/login | Login |
+| GET | /api/auth/me | Get current user |
 
-**Registrations (via Gateway):**
-- `POST /api/events/{id}/register` - Register for event
-- `GET /api/events/my-events` - Get user's registered events
-- `DELETE /api/events/{id}/registrations/{registrationId}` - Cancel registration
+### Events
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | /api/events | List all events |
+| GET | /api/events/{id} | Get event details |
+| POST | /api/events | Create event (Organizer) |
+| PUT | /api/events/{id} | Update event (Organizer) |
+| DELETE | /api/events/{id} | Delete event (Organizer) |
 
-**Notifications (via Gateway):**
-- `GET /api/notifications` - Get user notifications
-- `PATCH /api/notifications/{id}/read` - Mark notification as read
+### Registrations
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | /api/events/{id}/register | Register for event |
+| DELETE | /api/events/{id}/register | Cancel registration |
 
-**Direct Service Access:**
-- User Service: http://localhost:8081/swagger-ui.html
-- Event Service: http://localhost:8082/swagger-ui.html
-- Notification Service: http://localhost:8083/swagger-ui.html
+### Notifications
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | /api/notifications | Get notifications |
+| PUT | /api/notifications/{id}/read | Mark as read |
 
-## Testing RabbitMQ Integration
+---
 
-### Quick Demo Script
+## 🐛 Troubleshooting
 
+### Port Already in Use
 ```powershell
-.\demo-rabbitmq.ps1
+# Find process using port
+netstat -ano | findstr :5173
+netstat -ano | findstr :8080
+
+# Kill it
+taskkill /PID <PID> /F
 ```
 
-This script demonstrates:
-1. Register organizer and create event
-2. Verify EVENT_CREATED notification generated
-3. Register attendee to event
-4. Verify REGISTRATION_CONFIRMED notification generated
-
-### Manual Verification
-
-1. **RabbitMQ Management UI:**
-   - URL: http://localhost:15672
-   - Username: `eventflow`, Password: `eventflow123`
-   - Check Exchanges: `eventflow.exchange`
-   - Check Queues: `notification.queue`
-
-2. **Service Logs:**
-   ```bash
-   # Event service (publisher)
-   docker compose -f docker/docker-compose-microservices.yml logs --follow event-service
-   
-   # Notification service (consumer)
-   docker compose -f docker/docker-compose-microservices.yml logs --follow notification-service
-   ```
-
-3. **Expected Output:**
-   - event-service: "Published event EVENT_CREATED with routing key event.created"
-   - notification-service: "Received message from RabbitMQ" → "Saved notification"
-
-## Environment Variables
-
-See `.env.example` for configuration template. Key variables:
-
-- `DB_URL` - PostgreSQL connection URL (per service)
-- `DB_USER` - Database username
-- `DB_PASS` - Database password
-- `JWT_SECRET` - JWT signing key (must be same across all services)
-- `ENCRYPTION_KEY` - 16-character AES encryption key (user-service)
-- `RABBITMQ_HOST` - RabbitMQ hostname
-- `RABBITMQ_USER` - RabbitMQ username
-- `RABBITMQ_PASS` - RabbitMQ password
-
-## Project Structure
-
-```
-eventflow/
-├── services/
-│   ├── user-service/          # Authentication & user management
-│   ├── event-service/         # Events, registrations, RabbitMQ publisher
-│   └── notification-service/  # RabbitMQ consumer, notifications
-├── gateway/                   # Spring Cloud Gateway
-├── frontend/                  # React application
-└── docker/
-    ├── docker-compose-microservices.yml  # Full stack
-    └── docker-compose.yml                # Legacy monolith
-```
-
-## Development
-
-**Build All Services:**
+### Docker Issues
 ```powershell
-.\build-all-services.ps1
+# Full restart
+cd docker
+docker-compose down -v
+docker-compose up -d --build
 ```
 
-**Verify Microservices:**
+### Check Logs
 ```powershell
-.\verify-microservices.ps1
+docker-compose logs -f backend
+docker-compose logs -f frontend
 ```
 
-**Database Migrations:**
-- Managed by Flyway in each service
-- Migrations run automatically on startup
-- Located in `src/main/resources/db/migration/`
+---
 
-## Features
+## 📄 License
 
-- JWT-based authentication with role-based access control (USER, ORGANIZER, ADMIN)
-- Event CRUD operations with capacity management
-- Asynchronous notification system via RabbitMQ
-- Email encryption (AES-256) for GDPR compliance
-- External API integration (OpenStreetMap, Open-Meteo)
-- OpenAPI 3.0 documentation per service
-- Modern React UI with Tailwind CSS
-
-## Documentation
-
-- [QUICKSTART.md](QUICKSTART.md) - Quick setup guide
-- [RABBITMQ_IMPLEMENTATION_SUMMARY.md](RABBITMQ_IMPLEMENTATION_SUMMARY.md) - RabbitMQ architecture
-- [RABBITMQ_VERIFICATION.md](RABBITMQ_VERIFICATION.md) - Testing guide
-- [WEEK3_SUMMARY.md](WEEK3_SUMMARY.md) - Development log
-
-## License
-
-This project was developed for academic purposes.
+MIT License

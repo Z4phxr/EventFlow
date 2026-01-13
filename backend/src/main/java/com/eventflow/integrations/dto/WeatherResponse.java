@@ -12,8 +12,12 @@ import lombok.NoArgsConstructor;
 public class WeatherResponse {
     
     private Double temperature;
+    private Double temperatureMax;
+    private Double temperatureMin;
     private String condition;
     private Double windSpeed;
-    private Integer humidity;
+    private Integer humidity;  // Using as rain probability %
+    private Double precipitation;
+    private Integer weatherCode;
     private String forecast;
 }

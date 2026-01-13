@@ -18,7 +18,7 @@ function Navbar() {
     px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ease-out
     ${isActive(path) 
       ? 'bg-white text-sky-600 shadow-lg shadow-sky-900/20 scale-105' 
-      : 'bg-white/20 text-white hover:bg-white/30 hover:scale-105 hover:shadow-md'
+      : 'bg-white/30 text-white border border-white/10 backdrop-blur-sm shadow-lg shadow-sky-700/20 hover:bg-white/40 hover:scale-105'
     }
   `;
 
@@ -31,8 +31,8 @@ function Navbar() {
 
   const primaryButtonClass = `
     px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ease-out
-    bg-white text-sky-600 border-2 border-white shadow-lg shadow-sky-900/30
-    hover:bg-sky-50 hover:shadow-xl hover:shadow-sky-900/40 hover:scale-105
+    bg-gradient-to-r from-sky-500 to-cyan-400 text-white shadow-lg shadow-sky-500/30
+    hover:shadow-xl hover:shadow-sky-500/40 hover:scale-105
     active:scale-95
   `;
 
@@ -99,15 +99,11 @@ function Navbar() {
                 </>
               ) : (
                 <>
-                  <Link to="/login">
-                    <button className={buttonClass}>
-                      Login
-                    </button>
+                  <Link to="/login" className={navLinkClass('/login')}>
+                    Login
                   </Link>
-                  <Link to="/register">
-                    <button className={primaryButtonClass}>
-                      Get Started
-                    </button>
+                  <Link to="/register" className={navLinkClass('/register')}>
+                    Get Started
                   </Link>
                 </>
               )}

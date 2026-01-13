@@ -24,14 +24,21 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Only redirect on 401 if we have a token stored (meaning it was invalid/expired)
+    // Don't redirect for login/register endpoints
     if (error.response?.status === 401) {
-      // Clear stored auth data
-      localStorage.removeItem('token');
-      localStorage.removeItem('username');
-      localStorage.removeItem('role');
+      const token = localStorage.getItem('token');
+      const isAuthEndpoint = error.config?.url?.includes('/auth/');
       
-      // Redirect to login with message
-      window.location.href = '/login?session=expired';
+      if (token && !isAuthEndpoint) {
+        // Clear stored auth data
+        localStorage.removeItem('token');
+        localStorage.removeItem('username');
+        localStorage.removeItem('role');
+        
+        // Redirect to login with message
+        window.location.href = '/login?session=expired';
+      }
     }
     return Promise.reject(error);
   }
