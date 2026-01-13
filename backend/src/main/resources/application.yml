@@ -10,22 +10,27 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate
-    show-sql: false
+      ddl-auto: create-drop
+    show-sql: true
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
+        hbm2ddl:
+          auto: create-drop
+        cache:
+          use_second_level_cache: false
+          use_query_cache: false
 
   flyway:
-    enabled: true
+    enabled: false
     baseline-on-migrate: true
 
 # JWT Configuration
 # SECURITY WARNING: Default values below are for DEVELOPMENT ONLY
 # ALWAYS set JWT_SECRET and ENCRYPTION_KEY via environment variables in production
 jwt:
-  secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+  secret: ${JWT_SECRET:jwtSecretKey1234567890123456789012345678901234567890==}
   expiration: 86400000 # 24 hours
 
 # Encryption Configuration
@@ -45,8 +50,11 @@ springdoc:
 # Logging
 logging:
   level:
-    com.eventflow: INFO
+    com.eventflow: DEBUG
     org.springframework.security: INFO
+    org.hibernate: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type: TRACE
 
 ---
 # Development Profile

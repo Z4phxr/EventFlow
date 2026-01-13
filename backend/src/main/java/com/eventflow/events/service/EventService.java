@@ -10,6 +10,7 @@ import com.eventflow.events.dto.EventUpdateRequest;
 import com.eventflow.events.entity.Event;
 import com.eventflow.events.entity.EventStatus;
 import com.eventflow.events.repository.EventRepository;
+import com.eventflow.events.repository.EventSpecifications;
 import com.eventflow.integrations.service.GeocodingService;
 import com.eventflow.registrations.repository.RegistrationRepository;
 import com.eventflow.users.entity.User;
@@ -66,7 +67,7 @@ public class EventService {
 
     @Transactional(readOnly = true)
     public List<EventResponse> getEvents(ZonedDateTime dateFrom, ZonedDateTime dateTo, String city, EventStatus status) {
-        return eventRepository.findByFilters(dateFrom, dateTo, city, status)
+        return eventRepository.findAll(EventSpecifications.withFilters(dateFrom, dateTo, city, status))
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());

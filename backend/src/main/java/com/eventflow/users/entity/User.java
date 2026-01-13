@@ -1,6 +1,5 @@
 package com.eventflow.users.entity;
 
-import com.eventflow.common.encryption.EmailEncryptionConverter;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
@@ -28,9 +27,8 @@ public class User implements UserDetails {
     @Column(nullable = false, unique = true, length = 100)
     private String username;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
-    @Convert(converter = EmailEncryptionConverter.class)
-    private String encryptedEmail; // Encrypted at rest
+    @Column(nullable = false, unique = true, length = 100)
+    private String email;
 
     @Column(nullable = false)
     private String password;

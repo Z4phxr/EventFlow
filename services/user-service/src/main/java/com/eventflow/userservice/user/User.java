@@ -29,7 +29,7 @@ public class User implements UserDetails {
     private String username;
 
     @Column(nullable = false, columnDefinition = "TEXT")
-    @Convert(converter = EmailEncryptionConverter.class)
+    // @Convert(converter = EmailEncryptionConverter.class)  // Temporarily disabled
     private String encryptedEmail; // Encrypted at rest
 
     @Column(nullable = false)

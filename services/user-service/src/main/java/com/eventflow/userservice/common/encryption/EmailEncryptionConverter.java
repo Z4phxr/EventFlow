@@ -15,11 +15,13 @@ import java.util.Base64;
 public class EmailEncryptionConverter implements AttributeConverter<String, String> {
 
     private static final String ALGORITHM = "AES";
-    private static String encryptionKey;
-
-    @Value("${encryption.key}")
+    private static String encryptionKey = "MySecretKey12345"; // Default fallback
+    
+    @Value("${encryption.key:MySecretKey12345}")
     public void setEncryptionKey(String key) {
-        encryptionKey = key;
+        if (key != null && !key.isEmpty()) {
+            encryptionKey = key;
+        }
     }
 
     @Override
@@ -28,12 +30,17 @@ public class EmailEncryptionConverter implements AttributeConverter<String, Stri
             return null;
         }
         try {
+            if (encryptionKey == null) {
+                System.err.println("ERROR: Encryption key is null!");
+                throw new RuntimeException("Encryption key not initialized");
+            }
             SecretKeySpec key = new SecretKeySpec(encryptionKey.getBytes(StandardCharsets.UTF_8), ALGORITHM);
             Cipher cipher = Cipher.getInstance(ALGORITHM);
             cipher.init(Cipher.ENCRYPT_MODE, key);
             return Base64.getEncoder().encodeToString(cipher.doFinal(attribute.getBytes(StandardCharsets.UTF_8)));
         } catch (Exception e) {
-            throw new RuntimeException("Error encrypting email", e);
+            System.err.println("ERROR encrypting email: " + e.getMessage());
+            throw new RuntimeException("Error encrypting email: " + e.getMessage(), e);
         }
     }
 
