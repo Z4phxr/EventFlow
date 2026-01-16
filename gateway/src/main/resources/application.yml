@@ -27,6 +27,14 @@ spring:
           filters:
             - RewritePath=/api/(?<segment>.*), /api/$\{segment}
         
+        # Invitation Routes (also to event-service)
+        - id: invitation-service
+          uri: ${EVENT_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/invitations/**
+          filters:
+            - RewritePath=/api/(?<segment>.*), /api/$\{segment}
+        
         # Notification Service Routes
         - id: notification-service
           uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8083}
@@ -53,6 +61,9 @@ spring:
 
 server:
   port: 8080
+
+jwt:
+  secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
 
 management:
   endpoints:

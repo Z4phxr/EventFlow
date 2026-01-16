@@ -39,7 +39,7 @@ public class AuthService {
 
         userRepository.save(user);
 
-        String token = jwtTokenProvider.generateToken(user.getUsername(), user.getRole().name());
+        String token = jwtTokenProvider.generateToken(user.getUsername(), user.getRole().name(), user.getId().toString());
 
         return AuthResponse.builder()
                 .token(token)
@@ -60,7 +60,7 @@ public class AuthService {
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new BusinessException("User not found"));
 
-        String token = jwtTokenProvider.generateToken(user.getUsername(), user.getRole().name());
+        String token = jwtTokenProvider.generateToken(user.getUsername(), user.getRole().name(), user.getId().toString());
 
         return AuthResponse.builder()
                 .token(token)

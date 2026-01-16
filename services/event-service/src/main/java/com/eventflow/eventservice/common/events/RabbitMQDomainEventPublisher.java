@@ -56,6 +56,7 @@ public class RabbitMQDomainEventPublisher implements DomainEventPublisher {
             case "EVENT_DELETED" -> "event.deleted";
             case "USER_REGISTERED" -> "registration.created";
             case "USER_UNREGISTERED" -> "registration.deleted";
+            case "INVITATION_REQUESTED" -> "invitation.requested";
             default -> "event.unknown";
         };
     }

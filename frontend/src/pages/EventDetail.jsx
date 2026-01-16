@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { eventsAPI, registrationsAPI } from '../api';
+import { eventsAPI, registrationsAPI, invitationsAPI } from '../api';
 import Badge from '../components/Badge';
 import Card from '../components/Card';
 import Alert from '../components/Alert';
 import Button from '../components/Button';
 import Spinner from '../components/Spinner';
+import Modal from '../components/Modal';
+import Input from '../components/Input';
 
 function EventDetail() {
   const { id } = useParams();
@@ -19,6 +21,10 @@ function EventDetail() {
   const [actionLoading, setActionLoading] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
   const [isRegistered, setIsRegistered] = useState(false);
+  // Invitation modal state
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteLoading, setInviteLoading] = useState(false);
 
   useEffect(() => {
     fetchEventDetails();
@@ -126,6 +132,37 @@ function EventDetail() {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const handleOpenInvite = () => {
+    setInviteEmail('');
+    setShowInviteModal(true);
+  };
+
+  const handleSendInvite = async (e) => {
+    e.preventDefault();
+    if (!inviteEmail) return;
+    setInviteLoading(true);
+    try {
+      await invitationsAPI.create(id, inviteEmail);
+      setMessage({ text: 'Invitation sent successfully!', type: 'success' });
+      setShowInviteModal(false);
+      setInviteEmail('');
+    } catch (err) {
+      if (err.response?.status === 403) {
+        setMessage({ 
+          text: 'Access denied. Please sign in as an organizer to send invitations.', 
+          type: 'error' 
+        });
+      } else {
+        setMessage({ 
+          text: err.response?.data?.message || 'Failed to send invitation', 
+          type: 'error' 
+        });
+      }
+    } finally {
+      setInviteLoading(false);
+    }
   };
 
   // Get weather icon based on weather code or condition
@@ -242,16 +279,31 @@ function EventDetail() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-      {/* Back Button */}
-      <button 
-        onClick={() => navigate('/events')}
-        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 ease-out bg-gray-100 text-gray-700 border-2 border-gray-200 hover:bg-gray-200 hover:scale-105 active:scale-95"
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-        </svg>
-        Back to Events
-      </button>
+      {/* Back Button and Invite Button Row */}
+      <div className="flex items-center justify-between">
+        <button 
+          onClick={() => navigate('/events')}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 ease-out bg-gray-100 text-gray-700 border-2 border-gray-200 hover:bg-gray-200 hover:scale-105 active:scale-95"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Back to Events
+        </button>
+        
+        {/* Organizer Invite Button */}
+        {user && (user.role === 'ORGANIZER' || user.role === 'ADMIN') && (
+          <button
+            onClick={handleOpenInvite}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 ease-out bg-gradient-to-r from-purple-500 to-pink-400 text-white shadow-lg shadow-purple-500/20 hover:shadow-xl hover:shadow-purple-500/30 hover:scale-105 active:scale-95"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            Invite by Email
+          </button>
+        )}
+      </div>
 
       {/* Header Section */}
       <Card>
@@ -270,7 +322,7 @@ function EventDetail() {
               </Badge>
             </div>
           </div>
-        </Card.Content>
+          </Card.Content>
       </Card>
 
       {/* Message */}
@@ -592,8 +644,45 @@ function EventDetail() {
           )}
         </div>
       </div>
+      <InviteModal
+        isOpen={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        email={inviteEmail}
+        setEmail={setInviteEmail}
+        onSend={handleSendInvite}
+        loading={inviteLoading}
+      />
     </div>
   );
 }
 
+// Invite Modal component placed at end of file for local state
+function InviteModal({ isOpen, onClose, email, setEmail, onSend, loading }) {
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Send Email Invitation"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose} disabled={loading}>Cancel</Button>
+          <Button type="submit" form="invite-form" loading={loading} disabled={loading}>Send Invitation</Button>
+        </>
+      }
+    >
+      <form id="invite-form" onSubmit={onSend} className="space-y-4">
+        <p className="text-sm text-gray-600">Enter the email address of the person you want to invite. They will receive an email with accept/decline links.</p>
+        <Input label="Email Address" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={loading} placeholder="someone@example.com" />
+      </form>
+    </Modal>
+  );
+}
+
+export { InviteModal };
+
+// Render the invite modal using local state
+const _ = null; // placeholder to keep lint happy if needed
 export default EventDetail;
+
+// Attach modal usage via a small wrapper (modal uses EventDetail's state via props)
+// Note: EventDetail manages `showInviteModal`, `inviteEmail`, `inviteLoading` and handlers.

@@ -103,6 +103,13 @@ public class RegistrationService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public RegistrationResponse getMyRegistration(UUID eventId, User currentUser) {
+        return registrationRepository.findByEventIdAndUserId(eventId, currentUser.getId())
+                .map(this::mapToResponse)
+                .orElse(null);
+    }
+
     private RegistrationResponse mapToResponse(Registration registration) {
         return RegistrationResponse.builder()
                 .id(registration.getId())

@@ -47,6 +47,19 @@ public class RegistrationController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/me")
+    @Operation(summary = "Check if current user is registered for an event")
+    public ResponseEntity<RegistrationResponse> getMyRegistration(
+            @PathVariable UUID eventId,
+            @AuthenticationPrincipal User currentUser
+    ) {
+        RegistrationResponse registration = registrationService.getMyRegistration(eventId, currentUser);
+        if (registration == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(registration);
+    }
+
     @GetMapping
     @PreAuthorize("hasAnyRole('ORGANIZER', 'ADMIN')")
     @Operation(summary = "Get all registrations for an event")

@@ -21,6 +21,7 @@ public class RabbitMQConfig {
     public static final String EVENT_DELETED_KEY = "event.deleted";
     public static final String REGISTRATION_CREATED_KEY = "registration.created";
     public static final String REGISTRATION_DELETED_KEY = "registration.deleted";
+    public static final String INVITATION_REQUESTED_KEY = "invitation.requested";
 
     @Bean
     public TopicExchange eventFlowExchange() {

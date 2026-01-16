@@ -4,7 +4,7 @@
 Write-Host "=== EventFlow Microservices Verification ===" -ForegroundColor Cyan
 
 $services = @(
-    @{Name="API Gateway"; Url="http://localhost:8080/actuator/health"},
+    @{Name="API Gateway"; Url="http://localhost:18080/actuator/health"},
     @{Name="User Service"; Url="http://localhost:8081/actuator/health"},
     @{Name="Event Service"; Url="http://localhost:8082/actuator/health"},
     @{Name="Notification Service"; Url="http://localhost:8083/actuator/health"}
@@ -37,15 +37,14 @@ Write-Host "`n=== Testing Authentication Flow ===" -ForegroundColor Cyan
 # Test user registration
 Write-Host "`n1. Testing user registration..." -NoNewline
 $registerBody = @{
-    firstName = "Test"
-    lastName = "User"
+    username = "testuser$(Get-Random)"
     email = "test$(Get-Random)@example.com"
     password = "password123"
     role = "ORGANIZER"
 } | ConvertTo-Json
 
 try {
-    $registerResponse = Invoke-WebRequest -Uri "http://localhost:8080/api/auth/register" `
+    $registerResponse = Invoke-WebRequest -Uri "http://localhost:18080/api/auth/register" `
         -Method POST `
         -ContentType "application/json" `
         -Body $registerBody `
@@ -54,17 +53,17 @@ try {
     if ($registerResponse.StatusCode -eq 200 -or $registerResponse.StatusCode -eq 201) {
         Write-Host " OK" -ForegroundColor Green
         
-        # Extract email for login
-        $userEmail = ($registerBody | ConvertFrom-Json).email
+        # Extract username for login
+        $userName = ($registerBody | ConvertFrom-Json).username
         
         # Test login
         Write-Host "2. Testing user login..." -NoNewline
         $loginBody = @{
-            email = $userEmail
+            username = $userName
             password = "password123"
         } | ConvertTo-Json
         
-        $loginResponse = Invoke-WebRequest -Uri "http://localhost:8080/api/auth/login" `
+        $loginResponse = Invoke-WebRequest -Uri "http://localhost:18080/api/auth/login" `
             -Method POST `
             -ContentType "application/json" `
             -Body $loginBody `
@@ -79,12 +78,13 @@ try {
             # Test event creation
             Write-Host "3. Testing event creation with JWT..." -NoNewline
             $eventBody = @{
-                name = "Test Event"
+                title = "Test Event"
                 description = "Test event via API"
-                startDate = "2024-12-31T10:00:00"
-                endDate = "2024-12-31T18:00:00"
-                location = "Warsaw, Poland"
-                maxAttendees = 50
+                startAt = "2026-12-31T10:00:00Z"
+                endAt = "2026-12-31T18:00:00Z"
+                address = "Test Street 123"
+                city = "Warsaw"
+                capacity = 50
             } | ConvertTo-Json
             
             $headers = @{
@@ -92,7 +92,7 @@ try {
                 "Content-Type" = "application/json"
             }
             
-            $eventResponse = Invoke-WebRequest -Uri "http://localhost:8080/api/events" `
+            $eventResponse = Invoke-WebRequest -Uri "http://localhost:18080/api/events" `
                 -Method POST `
                 -Headers $headers `
                 -Body $eventBody `

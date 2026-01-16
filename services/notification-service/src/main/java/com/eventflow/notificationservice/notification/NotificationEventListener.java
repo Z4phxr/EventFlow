@@ -1,5 +1,6 @@
 package com.eventflow.notificationservice.notification;
 
+import com.eventflow.notificationservice.mail.EmailService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ public class NotificationEventListener {
 
     private final NotificationRepository notificationRepository;
     private final ObjectMapper objectMapper;
+    private final EmailService emailService;
 
     @RabbitListener(queues = "notification.queue")
     public void handleDomainEvent(String message) {
@@ -31,6 +33,12 @@ public class NotificationEventListener {
             // Check if we already processed this message (idempotency)
             if (notificationRepository.existsByExternalMessageId(messageId)) {
                 log.info("Message {} already processed, skipping", messageId);
+                return;
+            }
+            
+            // Handle invitation emails separately (don't create notification records)
+            if ("INVITATION_REQUESTED".equals(eventType)) {
+                handleInvitationRequested(payload);
                 return;
             }
             
@@ -132,5 +140,32 @@ public class NotificationEventListener {
                 yield null;
             }
         };
+    }
+    
+    private void handleInvitationRequested(JsonNode payload) {
+        try {
+            String inviteeEmail = payload.get("inviteeEmail").asText();
+            String inviterUsername = payload.get("inviterUsername").asText();
+            String eventTitle = payload.get("eventTitle").asText();
+            String eventStartAt = payload.get("eventStartAt").asText();
+            String eventAddress = payload.get("eventAddress").asText();
+            String eventCity = payload.get("eventCity").asText();
+            String token = payload.get("token").asText();
+            
+            emailService.sendInvitationEmail(
+                    inviteeEmail,
+                    inviterUsername,
+                    eventTitle,
+                    eventStartAt,
+                    eventAddress,
+                    eventCity,
+                    token
+            );
+            
+            log.info("Sent invitation email to {} for event {}", inviteeEmail, eventTitle);
+        } catch (Exception e) {
+            log.error("Failed to send invitation email", e);
+            // Don't throw exception to prevent message requeue
+        }
     }
 }

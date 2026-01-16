@@ -16,3 +16,18 @@ Thumbs.db
 # Logs
 *.log
 npm-debug.log*
+
+# Documentation folder
+documentation/
+
+# Migration and utility scripts (keep locally but don't commit)
+scripts/
+
+# Build artifacts and backup files
+target/
+*.original
+*.backup
+*.old
+
+
+.vscode

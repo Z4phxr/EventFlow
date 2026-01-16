@@ -8,7 +8,8 @@ services:
       POSTGRES_USER: eventflow
       POSTGRES_PASSWORD: eventflow123
     ports:
-      - "5432:5432"
+      # Host port changed to avoid conflicts with local Postgres on 5432
+      - "15432:5432"
     volumes:
       - postgres_user_data:/var/lib/postgresql/data
     networks:
@@ -145,6 +146,12 @@ services:
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: eventflow
       RABBITMQ_PASS: eventflow123
+      MAIL_HOST: ${MAIL_HOST:-sandbox.smtp.mailtrap.io}
+      MAIL_PORT: ${MAIL_PORT:-2525}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_FROM: ${MAIL_FROM:-noreply@eventflow.local}
+      FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:5173}
     ports:
       - "8083:8083"
     depends_on:
@@ -169,8 +176,10 @@ services:
       USER_SERVICE_URL: http://user-service:8081
       EVENT_SERVICE_URL: http://event-service:8082
       NOTIFICATION_SERVICE_URL: http://notification-service:8083
+      JWT_SECRET: ${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
     ports:
-      - "8080:8080"
+      # Host port remapped to avoid conflicts (use 18080 if 8080 is in use)
+      - "18080:8080"
     depends_on:
       - user-service
       - event-service
@@ -188,8 +197,6 @@ services:
       context: ../frontend
       dockerfile: Dockerfile
     container_name: eventflow-frontend
-    environment:
-      VITE_API_BASE_URL: http://localhost:8080/api
     ports:
       - "5173:80"
     depends_on:

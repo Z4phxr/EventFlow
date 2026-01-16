@@ -66,6 +66,13 @@ public class RabbitMQConfig {
     }
 
     @Bean
+    public Binding bindingInvitationRequested(Queue notificationQueue, TopicExchange eventFlowExchange) {
+        return BindingBuilder.bind(notificationQueue)
+                .to(eventFlowExchange)
+                .with("invitation.requested");
+    }
+
+    @Bean
     public ObjectMapper objectMapper() {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());

@@ -1,7 +1,8 @@
 import axios from 'axios';
 
-// In development (Vite dev server), use relative path to leverage the proxy
-// In production, use the full URL
+// In development (Vite dev server), use the proxy configured in vite.config.js
+// In production (Docker/nginx), use relative path to let nginx proxy handle it
+// For direct access (e.g., testing), can override with VITE_API_BASE_URL
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 const api = axios.create({
@@ -67,6 +68,14 @@ export const registrationsAPI = {
   unregister: (eventId) => api.delete(`/events/${eventId}/registrations/me`),
   checkRegistration: (eventId) => api.get(`/events/${eventId}/registrations/me`),
   getEventRegistrations: (eventId) => api.get(`/events/${eventId}/registrations`)
+};
+
+// Invitations API
+export const invitationsAPI = {
+  create: (eventId, email) => api.post(`/events/${eventId}/invitations`, { email }),
+  list: (eventId) => api.get(`/events/${eventId}/invitations`),
+  accept: (token) => api.post(`/invitations/accept?token=${token}`),
+  decline: (token) => api.post(`/invitations/decline?token=${token}`)
 };
 
 // Notifications API

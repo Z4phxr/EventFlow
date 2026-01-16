@@ -9,6 +9,8 @@ import EventDetail from './pages/EventDetail';
 import OrganizerDashboard from './pages/OrganizerDashboard';
 import Notifications from './pages/Notifications';
 import DemoDashboard from './pages/DemoDashboard';
+import InviteAccept from './pages/InviteAccept';
+import InviteDecline from './pages/InviteDecline';
 
 function App() {
   return (
@@ -44,6 +46,8 @@ function App() {
                 </ProtectedRoute>
               } 
             />
+            <Route path="/invite/accept" element={<InviteAccept />} />
+            <Route path="/invite/decline" element={<InviteDecline />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Layout>

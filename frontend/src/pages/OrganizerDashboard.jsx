@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { eventsAPI, registrationsAPI } from '../api';
+import { eventsAPI, registrationsAPI, invitationsAPI } from '../api';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import Input from '../components/Input';
@@ -32,6 +32,10 @@ function OrganizerDashboard() {
   const [expandedEventId, setExpandedEventId] = useState(null);
   const [registrationsLoading, setRegistrationsLoading] = useState(false);
   const [registrationsError, setRegistrationsError] = useState('');
+
+  // Invitations state
+  const [invitationsCache, setInvitationsCache] = useState({});
+  const [expandedInvitationsEventId, setExpandedInvitationsEventId] = useState(null);
 
   useEffect(() => {
     fetchMyEvents();
@@ -198,6 +202,39 @@ function OrganizerDashboard() {
       hour: '2-digit',
       minute: '2-digit'
     }).format(new Date(dateString));
+  };
+
+  const toggleInvitations = async (eventId) => {
+    if (expandedInvitationsEventId === eventId) {
+      setExpandedInvitationsEventId(null);
+      return;
+    }
+
+    setExpandedInvitationsEventId(eventId);
+
+    if (invitationsCache[eventId]) {
+      return;
+    }
+
+    fetchInvitations(eventId);
+  };
+
+  const fetchInvitations = async (eventId) => {
+    try {
+      const response = await invitationsAPI.list(eventId);
+      setInvitationsCache(prev => ({
+        ...prev,
+        [eventId]: response.data
+      }));
+    } catch (err) {
+      console.error('Failed to fetch invitations:', err);
+      if (err.response?.status === 403) {
+        setMessage({ 
+          text: 'Access denied. Please sign in as an organizer to view invitations.', 
+          type: 'error' 
+        });
+      }
+    }
   };
 
   if (loading) {
@@ -368,6 +405,56 @@ function OrganizerDashboard() {
                                     {formatRegistrationDate(reg.createdAt)}
                                   </span>
                                 </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Invitations Panel */}
+                <div className="pt-3 border-t border-gray-100 space-y-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleInvitations(event.id);
+                    }}
+                    className="w-full px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 ease-out bg-gradient-to-r from-purple-500 to-pink-400 text-white shadow-md shadow-purple-500/20 hover:shadow-lg hover:shadow-purple-500/30 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+                  >
+                    <svg 
+                      className={`w-4 h-4 transition-transform ${expandedInvitationsEventId === event.id ? 'rotate-180' : ''}`} 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                    {expandedInvitationsEventId === event.id ? 'Hide Invitations' : 'View Invitations'}
+                  </button>
+
+                  {expandedInvitationsEventId === event.id && (
+                    <div className="mt-3 p-3 bg-purple-50 rounded-lg">
+                      {invitationsCache[event.id]?.length === 0 ? (
+                        <p className="text-sm text-gray-500">No invitations sent yet</p>
+                      ) : (
+                        <div className="space-y-2">
+                          <span className="text-sm font-medium text-gray-700">
+                            {invitationsCache[event.id]?.length || 0} invitation{invitationsCache[event.id]?.length !== 1 ? 's' : ''}
+                          </span>
+                          <div className="max-h-40 overflow-y-auto space-y-1">
+                            {invitationsCache[event.id]?.map((inv) => (
+                              <div 
+                                key={inv.id} 
+                                className="flex items-center justify-between py-1 px-2 bg-white rounded text-sm border border-purple-100"
+                              >
+                                <span className="text-gray-700 text-xs truncate">
+                                  {inv.inviteeEmail}
+                                </span>
+                                <Badge variant={inv.status === 'ACCEPTED' ? 'success' : inv.status === 'DECLINED' ? 'error' : 'warning'} className="text-xs">
+                                  {inv.status}
+                                </Badge>
                               </div>
                             ))}
                           </div>
