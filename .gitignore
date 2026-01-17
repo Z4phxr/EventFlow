@@ -1,0 +1,62 @@
+# Environment variables (NEVER commit secrets!)
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Node.js / Frontend
+node_modules/
+dist/
+dist-ssr/
+
+# Documentation folder
+docs/
+
+# Migration and utility scripts (keep locally but don't commit)
+scripts/
+
+# Build artifacts and backup files
+target/
+bin/
+*.original
+*.backup
+*.old
+
+# Maven/Gradle specific
+.mvn/
+.gradle/
+build/
+
+# Java specific
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+*.iml
+
+# IDE specific
+.classpath
+.project
+.settings/
+.springBeans
+.sts4-cache
+nbproject/
+.nb-gradle/
+dist/
+nbdist/
+
+.vscode
