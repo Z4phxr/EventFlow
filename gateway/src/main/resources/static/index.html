@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>API Gateway Status</title>
+  <style>
+    body { font-family: Arial, Helvetica, sans-serif; background:#f7f9fc; color:#111; padding:24px }
+    h1 { color:#0b5; }
+    a { color:#0366d6 }
+    .card { background:#fff; border:1px solid #e1e4e8; padding:16px; border-radius:8px; max-width:720px }
+    ul { line-height:1.6 }
+    .note { color:#6a737d; font-size:0.9rem }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>EventFlow - API Gateway (status)</h1>
+    <p class="note">Ta strona jest serwowana przez API Gateway i ułatwia szybkie sprawdzenie zdrowia oraz routingu.</p>
+
+    <h2>Podstawowe linki</h2>
+    <ul>
+      <li><a href="/actuator/health" target="_blank">/actuator/health</a> - ogólny health endpoint gatewaya</li>
+      <li><a href="/actuator/gateway" target="_blank">/actuator/gateway</a> - lista tras skonfigurowanych w gateway</li>
+      <li><a href="/api/events" target="_blank">/api/events</a> - przykładowe proxy do `event-service` (GET lista)</li>
+      <li><a href="/api/notifications" target="_blank">/api/notifications</a> - proxy do `notification-service`</li>
+    </ul>
+</body>
+</html>

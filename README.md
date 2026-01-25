@@ -54,6 +54,7 @@ Each service maintains its own PostgreSQL database following the database-per-se
 **Requirements:** Docker & Docker Compose installed
 
 **1. Configure SMTP (for email invitations)**
+Not required if you don't want to use email invitation feature
 
 Create `docker/.env` file:
 ```env

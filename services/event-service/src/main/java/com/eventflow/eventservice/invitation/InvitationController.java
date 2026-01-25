@@ -51,8 +51,8 @@ public class InvitationController {
         return ResponseEntity.ok(invitations);
     }
 
-    @PostMapping("/invitations/accept")
-    @Operation(summary = "Accept an invitation (public, token-based) - DEPRECATED: Use verify then accept-register")
+        @PostMapping("/invitations/accept")
+        @Operation(summary = "Accept an invitation (public, token-based)")
     public ResponseEntity<Map<String, Object>> acceptInvitation(
             @RequestParam String token
     ) {
